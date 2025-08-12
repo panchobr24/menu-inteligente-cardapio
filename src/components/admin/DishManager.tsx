@@ -84,6 +84,17 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
   const saveDish = async (dishData: Partial<Dish>) => {
     try {
+      // Ensure required fields are present
+      if (!dishData.name || dishData.name.trim() === '') {
+        toast.error("Nome do prato é obrigatório");
+        return;
+      }
+
+      if (!dishData.price || dishData.price <= 0) {
+        toast.error("Preço deve ser maior que zero");
+        return;
+      }
+
       if (editingDish?.id) {
         // Update existing dish
         const { error } = await supabase
@@ -94,13 +105,26 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         if (error) throw error;
         toast.success("Prato atualizado com sucesso!");
       } else {
-        // Create new dish
+        // Create new dish - ensure required fields are present
+        const insertData = {
+          name: dishData.name,
+          description: dishData.description || '',
+          full_description: dishData.full_description || '',
+          price: dishData.price,
+          image_url: dishData.image_url || null,
+          calories: dishData.calories || null,
+          protein: dishData.protein || null,
+          carbs: dishData.carbs || null,
+          fat: dishData.fat || null,
+          tags: dishData.tags || [],
+          diet_tags: dishData.diet_tags || [],
+          is_available: dishData.is_available !== false,
+          restaurant_id: restaurant.id
+        };
+
         const { error } = await supabase
           .from('dishes')
-          .insert({
-            ...dishData,
-            restaurant_id: restaurant.id
-          });
+          .insert(insertData);
 
         if (error) throw error;
         toast.success("Prato criado com sucesso!");
@@ -110,6 +134,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
       setIsDialogOpen(false);
       setEditingDish(null);
     } catch (error) {
+      console.error('Erro ao salvar prato:', error);
       toast.error("Erro ao salvar prato");
     }
   };

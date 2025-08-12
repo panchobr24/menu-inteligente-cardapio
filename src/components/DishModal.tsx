@@ -6,18 +6,19 @@ import { Card } from "@/components/ui/card";
 import { Zap, Beef, Wheat, Droplet, Heart, X } from "lucide-react";
 
 interface Dish {
-  id: number;
+  id: string;
   name: string;
   description: string;
+  full_description: string;
   price: number;
-  image: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
+  image_url?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   tags: string[];
-  dietTags: string[];
-  fullDescription: string;
+  diet_tags: string[];
+  is_available: boolean;
 }
 
 interface DishModalProps {
@@ -44,10 +45,18 @@ const DishModal = ({ dish, isOpen, onClose }: DishModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
         {/* Header Image */}
-        <div className="relative h-48 bg-gradient-to-br from-appetite-100 to-nutrition-100">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-8xl opacity-30">🍽️</div>
-          </div>
+        <div className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20">
+          {dish.image_url ? (
+            <img 
+              src={dish.image_url} 
+              alt={dish.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-8xl opacity-30">🍽️</div>
+            </div>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -70,16 +79,16 @@ const DishModal = ({ dish, isOpen, onClose }: DishModalProps) => {
               {dish.name}
             </DialogTitle>
             <p className="text-muted-foreground leading-relaxed">
-              {dish.fullDescription}
+              {dish.full_description || dish.description}
             </p>
           </DialogHeader>
 
           {/* Diet Tags */}
-          {dish.dietTags.length > 0 && (
+          {dish.diet_tags.length > 0 && (
             <div className="mb-4">
               <h4 className="font-semibold mb-2 text-sm">Adequado para:</h4>
               <div className="flex flex-wrap gap-2">
-                {dish.dietTags.map((tag) => {
+                {dish.diet_tags.map((tag) => {
                   const tagDisplay = getDietTagDisplay(tag);
                   return (
                     <Badge 
@@ -95,54 +104,64 @@ const DishModal = ({ dish, isOpen, onClose }: DishModalProps) => {
           )}
 
           {/* Nutritional Information */}
-          <div className="mb-6">
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Heart className="w-4 h-4 text-nutrition-600" />
-              Informações Nutricionais
-            </h4>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Zap className="w-4 h-4 text-appetite-600" />
-                  <span className="text-sm font-medium">Calorias</span>
-                </div>
-                <div className="text-lg font-bold text-appetite-600">
-                  {dish.calories} <span className="text-sm text-muted-foreground">kcal</span>
-                </div>
-              </Card>
+          {(dish.calories || dish.protein || dish.carbs || dish.fat) && (
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Heart className="w-4 h-4 text-primary" />
+                Informações Nutricionais
+              </h4>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {dish.calories && (
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Calorias</span>
+                    </div>
+                    <div className="text-lg font-bold text-primary">
+                      {dish.calories} <span className="text-sm text-muted-foreground">kcal</span>
+                    </div>
+                  </Card>
+                )}
 
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Beef className="w-4 h-4 text-nutrition-600" />
-                  <span className="text-sm font-medium">Proteína</span>
-                </div>
-                <div className="text-lg font-bold text-nutrition-600">
-                  {dish.protein} <span className="text-sm text-muted-foreground">g</span>
-                </div>
-              </Card>
+                {dish.protein && (
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Beef className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Proteína</span>
+                    </div>
+                    <div className="text-lg font-bold text-primary">
+                      {dish.protein} <span className="text-sm text-muted-foreground">g</span>
+                    </div>
+                  </Card>
+                )}
 
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Wheat className="w-4 h-4 text-appetite-600" />
-                  <span className="text-sm font-medium">Carboidratos</span>
-                </div>
-                <div className="text-lg font-bold text-appetite-600">
-                  {dish.carbs} <span className="text-sm text-muted-foreground">g</span>
-                </div>
-              </Card>
+                {dish.carbs && (
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wheat className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Carboidratos</span>
+                    </div>
+                    <div className="text-lg font-bold text-primary">
+                      {dish.carbs} <span className="text-sm text-muted-foreground">g</span>
+                    </div>
+                  </Card>
+                )}
 
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Droplet className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium">Gorduras</span>
-                </div>
-                <div className="text-lg font-bold text-blue-600">
-                  {dish.fat} <span className="text-sm text-muted-foreground">g</span>
-                </div>
-              </Card>
+                {dish.fat && (
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Droplet className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium">Gorduras</span>
+                    </div>
+                    <div className="text-lg font-bold text-blue-600">
+                      {dish.fat} <span className="text-sm text-muted-foreground">g</span>
+                    </div>
+                  </Card>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Additional Tags */}
           {dish.tags.length > 0 && (
@@ -159,7 +178,7 @@ const DishModal = ({ dish, isOpen, onClose }: DishModalProps) => {
           )}
 
           {/* Action Button */}
-          <Button className="btn-hero w-full" size="lg">
+          <Button className="w-full" size="lg">
             Solicitar ao Garçom
           </Button>
         </div>
