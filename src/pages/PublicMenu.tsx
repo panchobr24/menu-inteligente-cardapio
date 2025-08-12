@@ -1,11 +1,15 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, Filter, Search, Zap, Beef, Wheat, Droplet, Heart, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { Search, Filter, ArrowLeft, Settings } from "lucide-react";
+import DishCard from "@/components/DishCard";
 import DishModal from "@/components/DishModal";
 import ModernFilterPanel from "@/components/ModernFilterPanel";
 
@@ -34,163 +38,152 @@ interface Dish {
   is_available: boolean;
 }
 
-const DIET_FILTERS = [
-  { id: "vegano", label: "Vegano", icon: Heart },
-  { id: "vegetariano", label: "Vegetariano", icon: Heart },
-  { id: "low-carb", label: "Low Carb", icon: Zap },
-  { id: "sem-gluten", label: "Sem Glúten", icon: Wheat },
-  { id: "sem-lactose", label: "Sem Lactose", icon: Droplet },
-  { id: "keto", label: "Keto", icon: Zap }
-];
-
 const PublicMenu = () => {
-  const { restaurantId } = useParams();
-  const navigate = useNavigate();
+  const { restaurantId } = useParams<{ restaurantId: string }>();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [filteredDishes, setFilteredDishes] = useState<Dish[]>([]);
-  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
-  const [isDishModalOpen, setIsDishModalOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isOwner, setIsOwner] = useState(false);
-  
-  // Filter states
-  const [selectedDietFilters, setSelectedDietFilters] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState([100]);
-  const [calorieRange, setCalorieRange] = useState([1000]);
-  const [proteinRange, setProteinRange] = useState([50]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Filtering states
+  const [selectedDietTags, setSelectedDietTags] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState([0, 100]);
+  const [calorieRange, setCalorieRange] = useState([0, 1000]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (restaurantId) {
-      fetchRestaurantData();
-      checkIfOwner();
+      fetchRestaurant();
+      fetchDishes();
+      checkOwnership();
     }
   }, [restaurantId]);
 
   useEffect(() => {
-    applyFilters();
-  }, [dishes, selectedDietFilters, priceRange, calorieRange, proteinRange, searchTerm]);
+    filterDishes();
+  }, [dishes, searchTerm, selectedDietTags, priceRange, calorieRange, selectedTags]);
 
-  const checkIfOwner = async () => {
+  const checkOwnership = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
       if (user) {
-        const { data: ownershipData } = await supabase
+        const { data } = await supabase
           .from('restaurant_owners')
           .select('restaurant_id')
           .eq('user_id', user.id)
           .eq('restaurant_id', restaurantId)
           .single();
         
-        setIsOwner(!!ownershipData);
+        setIsOwner(!!data);
       }
     } catch (error) {
-      console.error('Error checking ownership:', error);
+      console.log('Not owner or not logged in');
     }
   };
 
-  const fetchRestaurantData = async () => {
+  const fetchRestaurant = async () => {
     try {
-      // Fetch restaurant info
-      const { data: restaurantData } = await supabase
+      const { data, error } = await supabase
         .from('restaurants')
         .select('*')
         .eq('id', restaurantId)
         .single();
 
-      // Fetch dishes
-      const { data: dishesData } = await supabase
+      if (error) throw error;
+      setRestaurant(data);
+    } catch (error) {
+      console.error('Erro ao buscar restaurante:', error);
+      toast.error("Restaurante não encontrado");
+    }
+  };
+
+  const fetchDishes = async () => {
+    try {
+      const { data, error } = await supabase
         .from('dishes')
         .select('*')
         .eq('restaurant_id', restaurantId)
         .eq('is_available', true)
         .order('created_at', { ascending: false });
 
-      setRestaurant(restaurantData);
-      setDishes(dishesData || []);
-      
-      // Set initial filter ranges based on actual data
-      if (dishesData?.length) {
-        const maxPrice = Math.max(...dishesData.map(d => d.price));
-        const maxCalories = Math.max(...dishesData.map(d => d.calories || 0));
-        const maxProtein = Math.max(...dishesData.map(d => d.protein || 0));
-        
-        setPriceRange([maxPrice]);
-        setCalorieRange([maxCalories]);
-        setProteinRange([maxProtein]);
-      }
+      if (error) throw error;
+      setDishes(data || []);
     } catch (error) {
-      console.error('Erro ao buscar dados:', error);
+      console.error('Erro ao buscar pratos:', error);
+      toast.error("Erro ao carregar cardápio");
     } finally {
       setLoading(false);
     }
   };
 
-  const applyFilters = () => {
+  const filterDishes = () => {
     let filtered = dishes;
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(dish => 
-        dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dish.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dish.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    // Diet filters
-    if (selectedDietFilters.length > 0) {
       filtered = filtered.filter(dish =>
-        selectedDietFilters.some(filter => dish.diet_tags.includes(filter))
+        dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        dish.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Price filter
-    filtered = filtered.filter(dish => dish.price <= priceRange[0]);
-
-    // Calorie filter
-    if (calorieRange[0] < 1000) {
-      filtered = filtered.filter(dish => (dish.calories || 0) <= calorieRange[0]);
+    // Diet tags filter
+    if (selectedDietTags.length > 0) {
+      filtered = filtered.filter(dish =>
+        selectedDietTags.some(tag => dish.diet_tags.includes(tag))
+      );
     }
 
-    // Protein filter
-    if (proteinRange[0] > 0) {
-      filtered = filtered.filter(dish => (dish.protein || 0) >= proteinRange[0]);
+    // Tags filter
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(dish =>
+        selectedTags.some(tag => dish.tags.includes(tag))
+      );
     }
+
+    // Price range filter
+    filtered = filtered.filter(dish =>
+      dish.price >= priceRange[0] && dish.price <= priceRange[1]
+    );
+
+    // Calorie range filter (only if dish has calorie info)
+    filtered = filtered.filter(dish =>
+      !dish.calories || (dish.calories >= calorieRange[0] && dish.calories <= calorieRange[1])
+    );
 
     setFilteredDishes(filtered);
   };
 
   const clearFilters = () => {
-    setSelectedDietFilters([]);
+    setSelectedDietTags([]);
+    setSelectedTags([]);
+    setPriceRange([0, 100]);
+    setCalorieRange([0, 1000]);
     setSearchTerm("");
-    if (dishes.length) {
-      const maxPrice = Math.max(...dishes.map(d => d.price));
-      const maxCalories = Math.max(...dishes.map(d => d.calories || 0));
-      setPriceRange([maxPrice]);
-      setCalorieRange([maxCalories]);
-      setProteinRange([0]);
-    }
   };
 
-  const handleDishClick = (dish: Dish) => {
-    setSelectedDish(dish);
-    setIsDishModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsDishModalOpen(false);
-    setSelectedDish(null);
+  const getUniqueValues = (key: keyof Dish) => {
+    const values = dishes.flatMap(dish => dish[key] as string[]).filter(Boolean);
+    return [...new Set(values)];
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando cardápio...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full rounded-lg" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -198,265 +191,135 @@ const PublicMenu = () => {
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Restaurante não encontrado</h2>
-          <Button onClick={() => navigate("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar ao Início
-          </Button>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="text-center py-12">
+            <h2 className="text-xl font-semibold mb-2">Restaurante não encontrado</h2>
+            <p className="text-muted-foreground mb-4">
+              O restaurante que você está procurando não existe ou não está disponível.
+            </p>
+            <Link to="/">
+              <Button>Voltar ao início</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const customStyle = {
-    '--primary-color': restaurant.primary_color,
-    '--secondary-color': restaurant.secondary_color,
-  } as React.CSSProperties;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100" style={customStyle}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar ao Início
-            </Button>
-            
-            <div className="flex items-center gap-3">
-              {restaurant.logo_url ? (
-                <img 
-                  src={restaurant.logo_url} 
-                  alt={restaurant.name}
-                  className="w-10 h-10 object-cover rounded-xl"
+      <div className="bg-white border-b shadow-sm">
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              {restaurant.logo_url && (
+                <img
+                  src={restaurant.logo_url}
+                  alt={`${restaurant.name} logo`}
+                  className="w-16 h-16 object-cover rounded-lg border"
                 />
-              ) : (
-                <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: restaurant.primary_color }}
-                >
-                  {restaurant.name.charAt(0)}
-                </div>
               )}
               <div>
-                <h1 className="font-bold text-lg">{restaurant.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  {filteredDishes.length} pratos disponíveis
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900">{restaurant.name}</h1>
+                {restaurant.description && (
+                  <p className="text-muted-foreground mt-1">{restaurant.description}</p>
+                )}
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              {isOwner && (
-                <Button 
-                  onClick={() => navigate("/admin")}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
+            
+            {isOwner && (
+              <Link to="/admin">
+                <Button variant="outline" className="flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  Painel Admin
+                  Gerenciar Restaurante
                 </Button>
-              )}
-              <Button 
-                onClick={() => setShowFilters(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Filter className="w-4 h-4" />
-                Filtros
-              </Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Search and Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Buscar pratos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Filtrar
+            </Button>
           </div>
 
-          {/* Search Bar */}
-          <div className="mt-4 relative max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar pratos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          {/* Active Filters */}
-          {(selectedDietFilters.length > 0 || searchTerm || priceRange[0] < (dishes.length ? Math.max(...dishes.map(d => d.price)) : 100)) && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {searchTerm && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  Busca: "{searchTerm}"
-                </Badge>
-              )}
-              {selectedDietFilters.map(filterId => {
-                const filter = DIET_FILTERS.find(f => f.id === filterId);
-                return (
-                  <Badge key={filterId} variant="secondary" className="bg-primary/10 text-primary">
-                    {filter?.label}
-                  </Badge>
-                );
-              })}
-              {priceRange[0] < (dishes.length ? Math.max(...dishes.map(d => d.price)) : 100) && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  Até R$ {priceRange[0].toFixed(2)}
-                </Badge>
-              )}
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Limpar filtros
-              </Button>
+          {/* Modern Filter Panel */}
+          {showFilters && (
+            <div className="mt-6">
+              <ModernFilterPanel
+                availableDietTags={getUniqueValues('diet_tags')}
+                availableTags={getUniqueValues('tags')}
+                selectedDietTags={selectedDietTags}
+                selectedTags={selectedTags}
+                priceRange={priceRange}
+                calorieRange={calorieRange}
+                onDietTagsChange={setSelectedDietTags}
+                onTagsChange={setSelectedTags}
+                onPriceRangeChange={setPriceRange}
+                onCalorieRangeChange={setCalorieRange}
+                onClearFilters={clearFilters}
+                maxPrice={Math.max(...dishes.map(d => d.price), 100)}
+                maxCalories={Math.max(...dishes.map(d => d.calories || 0), 1000)}
+              />
             </div>
           )}
         </div>
       </div>
 
       {/* Menu Content */}
-      <div className="container mx-auto px-4 py-8">
-        {restaurant.description && (
-          <div className="text-center mb-8">
-            <p className="text-lg text-muted-foreground">{restaurant.description}</p>
-          </div>
-        )}
-
+      <div className="max-w-4xl mx-auto p-6">
         {filteredDishes.length === 0 ? (
-          <div className="text-center py-12">
-            <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">Nenhum prato encontrado</h3>
-            <p className="text-muted-foreground mb-4">
-              Tente ajustar seus filtros para ver mais opções
-            </p>
-            <Button onClick={() => setShowFilters(true)} variant="outline">
-              Ajustar Filtros
-            </Button>
-          </div>
+          <Card className="text-center py-12">
+            <CardContent>
+              <h3 className="text-lg font-semibold mb-2">Nenhum prato encontrado</h3>
+              <p className="text-muted-foreground mb-4">
+                {dishes.length === 0 
+                  ? "Este restaurante ainda não possui pratos cadastrados."
+                  : "Tente ajustar os filtros para ver mais opções."
+                }
+              </p>
+              {dishes.length > 0 && (
+                <Button onClick={clearFilters} variant="outline">
+                  Limpar Filtros
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDishes.map((dish, index) => (
-              <Card 
-                key={dish.id} 
-                className="dish-card group cursor-pointer hover:shadow-xl transition-all duration-300"
-                onClick={() => handleDishClick(dish)}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="p-6">
-                  {/* Image placeholder or actual image */}
-                  <div 
-                    className="h-32 rounded-xl mb-4 bg-gradient-to-br flex items-center justify-center"
-                    style={{ 
-                      backgroundColor: restaurant.primary_color + '20',
-                      backgroundImage: dish.image_url ? `url(${dish.image_url})` : undefined,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
-                  >
-                    {!dish.image_url && (
-                      <div className="text-4xl opacity-30">🍽️</div>
-                    )}
-                  </div>
-
-                  <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">
-                    {dish.name}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    {dish.description}
-                  </p>
-
-                  {/* Nutritional info */}
-                  {(dish.calories || dish.protein) && (
-                    <div className="flex gap-2 mb-4">
-                      {dish.calories && (
-                        <Badge variant="outline" className="text-xs">
-                          <Zap className="w-3 h-3 mr-1" />
-                          {dish.calories} kcal
-                        </Badge>
-                      )}
-                      {dish.protein && (
-                        <Badge variant="outline" className="text-xs">
-                          <Beef className="w-3 h-3 mr-1" />
-                          {dish.protein}g
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Diet tags */}
-                  {dish.diet_tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {dish.diet_tags.slice(0, 3).map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {dish.diet_tags.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{dish.diet_tags.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <span 
-                      className="text-2xl font-bold"
-                      style={{ color: restaurant.primary_color }}
-                    >
-                      R$ {dish.price.toFixed(2)}
-                    </span>
-                    <Button 
-                      size="sm"
-                      style={{ backgroundColor: restaurant.primary_color }}
-                      className="text-white hover:opacity-90"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDishClick(dish);
-                      }}
-                    >
-                      Ver Detalhes
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+            {filteredDishes.map((dish) => (
+              <DishCard
+                key={dish.id}
+                dish={dish}
+                onViewDetails={(dish) => setSelectedDish(dish)}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Filter Panel */}
-      <ModernFilterPanel 
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        dietFilters={DIET_FILTERS}
-        selectedDietFilters={selectedDietFilters}
-        onToggleDietFilter={(filterId) => {
-          setSelectedDietFilters(prev => 
-            prev.includes(filterId)
-              ? prev.filter(id => id !== filterId)
-              : [...prev, filterId]
-          );
-        }}
-        priceRange={priceRange}
-        onPriceRangeChange={setPriceRange}
-        calorieRange={calorieRange}
-        onCalorieRangeChange={setCalorieRange}
-        proteinRange={proteinRange}
-        onProteinRangeChange={setProteinRange}
-        maxPrice={dishes.length ? Math.max(...dishes.map(d => d.price)) : 100}
-        maxCalories={dishes.length ? Math.max(...dishes.map(d => d.calories || 0)) : 1000}
-        onApplyFilters={() => setShowFilters(false)}
-        onClearFilters={clearFilters}
-      />
-
       {/* Dish Modal */}
-      <DishModal 
+      <DishModal
         dish={selectedDish}
-        isOpen={isDishModalOpen}
-        onClose={handleCloseModal}
+        isOpen={!!selectedDish}
+        onClose={() => setSelectedDish(null)}
       />
     </div>
   );
