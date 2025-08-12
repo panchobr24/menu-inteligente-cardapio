@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Filter, Search, Zap, Beef, Wheat, Droplet, Heart } from "lucide-react";
+import { ArrowLeft, Filter, Search, Zap, Beef, Wheat, Droplet, Heart, Settings } from "lucide-react";
 import DishModal from "@/components/DishModal";
 import ModernFilterPanel from "@/components/ModernFilterPanel";
 
@@ -50,8 +50,10 @@ const PublicMenu = () => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [filteredDishes, setFilteredDishes] = useState<Dish[]>([]);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+  const [isDishModalOpen, setIsDishModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
   
   // Filter states
   const [selectedDietFilters, setSelectedDietFilters] = useState<string[]>([]);
@@ -63,12 +65,31 @@ const PublicMenu = () => {
   useEffect(() => {
     if (restaurantId) {
       fetchRestaurantData();
+      checkIfOwner();
     }
   }, [restaurantId]);
 
   useEffect(() => {
     applyFilters();
   }, [dishes, selectedDietFilters, priceRange, calorieRange, proteinRange, searchTerm]);
+
+  const checkIfOwner = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: ownershipData } = await supabase
+          .from('restaurant_owners')
+          .select('restaurant_id')
+          .eq('user_id', user.id)
+          .eq('restaurant_id', restaurantId)
+          .single();
+        
+        setIsOwner(!!ownershipData);
+      }
+    } catch (error) {
+      console.error('Error checking ownership:', error);
+    }
+  };
 
   const fetchRestaurantData = async () => {
     try {
@@ -154,6 +175,16 @@ const PublicMenu = () => {
     }
   };
 
+  const handleDishClick = (dish: Dish) => {
+    setSelectedDish(dish);
+    setIsDishModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsDishModalOpen(false);
+    setSelectedDish(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
@@ -222,14 +253,26 @@ const PublicMenu = () => {
               </div>
             </div>
 
-            <Button 
-              onClick={() => setShowFilters(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Filtros
-            </Button>
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <Button 
+                  onClick={() => navigate("/admin")}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Painel Admin
+                </Button>
+              )}
+              <Button 
+                onClick={() => setShowFilters(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filtros
+              </Button>
+            </div>
           </div>
 
           {/* Search Bar */}
@@ -298,7 +341,7 @@ const PublicMenu = () => {
               <Card 
                 key={dish.id} 
                 className="dish-card group cursor-pointer hover:shadow-xl transition-all duration-300"
-                onClick={() => setSelectedDish(dish)}
+                onClick={() => handleDishClick(dish)}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="p-6">
@@ -369,6 +412,10 @@ const PublicMenu = () => {
                       size="sm"
                       style={{ backgroundColor: restaurant.primary_color }}
                       className="text-white hover:opacity-90"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDishClick(dish);
+                      }}
                     >
                       Ver Detalhes
                     </Button>
@@ -406,13 +453,11 @@ const PublicMenu = () => {
       />
 
       {/* Dish Modal */}
-      {selectedDish && (
-        <DishModal 
-          dish={selectedDish}
-          isOpen={!!selectedDish}
-          onClose={() => setSelectedDish(null)}
-        />
-      )}
+      <DishModal 
+        dish={selectedDish}
+        isOpen={isDishModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

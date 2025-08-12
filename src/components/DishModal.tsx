@@ -22,12 +22,14 @@ interface Dish {
 }
 
 interface DishModalProps {
-  dish: Dish;
+  dish: Dish | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 const DishModal = ({ dish, isOpen, onClose }: DishModalProps) => {
+  if (!dish) return null;
+
   const getDietTagDisplay = (tag: string) => {
     const tagMap: { [key: string]: { label: string; color: string } } = {
       'vegano': { label: 'Vegano', color: 'bg-nutrition-100 text-nutrition-800' },

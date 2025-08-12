@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Save, Upload, Store } from "lucide-react";
+import { Save, Upload, Store, Image } from "lucide-react";
+import QRCodeGenerator from "@/components/QRCodeGenerator";
 
 interface Restaurant {
   id: string;
@@ -30,6 +31,8 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
     logo_url: restaurant.logo_url || ""
   });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     setLoading(true);
@@ -47,9 +50,52 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
       onUpdate(data);
       toast.success("Configurações salvas com sucesso!");
     } catch (error) {
+      console.error('Erro ao salvar:', error);
       toast.error("Erro ao salvar configurações");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor, selecione um arquivo de imagem");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 5MB");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${restaurant.id}-logo-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-logos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('restaurant-logos')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+      toast.success("Logo enviada com sucesso!");
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error("Erro ao fazer upload da logo");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -88,16 +134,23 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="logo">URL da Logo</Label>
+            <Label>Logo do Restaurante</Label>
             <div className="flex gap-2">
-              <Input
-                id="logo"
-                value={formData.logo_url}
-                onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                placeholder="https://exemplo.com/logo.png"
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
               />
-              <Button variant="outline" size="sm">
-                <Upload className="w-4 h-4" />
+              <Button 
+                variant="outline" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex-1"
+              >
+                <Image className="w-4 h-4 mr-2" />
+                {uploading ? "Enviando..." : "Selecionar Imagem"}
               </Button>
             </div>
             {formData.logo_url && (
@@ -118,6 +171,21 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
             <Save className="w-4 h-4 mr-2" />
             {loading ? "Salvando..." : "Salvar Configurações"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>QR Code do Cardápio</CardTitle>
+          <CardDescription>
+            Gere um QR Code para que os clientes acessem seu cardápio facilmente
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <QRCodeGenerator 
+            restaurantId={restaurant.id}
+            restaurantName={restaurant.name}
+          />
         </CardContent>
       </Card>
     </div>

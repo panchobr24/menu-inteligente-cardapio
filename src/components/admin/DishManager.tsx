@@ -97,9 +97,24 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
       if (editingDish?.id) {
         // Update existing dish
+        const updateData = {
+          name: dishData.name,
+          description: dishData.description || '',
+          full_description: dishData.full_description || '',
+          price: dishData.price,
+          image_url: dishData.image_url || null,
+          calories: dishData.calories || null,
+          protein: dishData.protein || null,
+          carbs: dishData.carbs || null,
+          fat: dishData.fat || null,
+          tags: dishData.tags || [],
+          diet_tags: dishData.diet_tags || [],
+          is_available: dishData.is_available !== false
+        };
+
         const { error } = await supabase
           .from('dishes')
-          .update(dishData)
+          .update(updateData)
           .eq('id', editingDish.id);
 
         if (error) throw error;
@@ -172,6 +187,16 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     }
   };
 
+  const openAddDialog = () => {
+    setEditingDish(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (dish: Dish) => {
+    setEditingDish(dish);
+    setIsDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -188,30 +213,10 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
           <p className="text-muted-foreground">Adicione, edite ou remova pratos do seu cardápio</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingDish(null)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Prato
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
-              </DialogTitle>
-            </DialogHeader>
-            <DishForm
-              dish={editingDish}
-              initialData={initialDishData}
-              onSave={saveDish}
-              onCancel={() => {
-                setIsDialogOpen(false);
-                setEditingDish(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={openAddDialog}>
+          <Plus className="w-4 h-4 mr-2" />
+          Adicionar Prato
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -261,10 +266,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setEditingDish(dish);
-                      setIsDialogOpen(true);
-                    }}
+                    onClick={() => openEditDialog(dish)}
                     className="flex-1"
                   >
                     <Edit className="w-4 h-4 mr-2" />
@@ -291,13 +293,33 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
             <p className="text-muted-foreground mb-4">
               Comece adicionando o primeiro prato ao seu cardápio
             </p>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={openAddDialog}>
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Primeiro Prato
             </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* Dish Form Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
+            </DialogTitle>
+          </DialogHeader>
+          <DishForm
+            dish={editingDish}
+            initialData={initialDishData}
+            onSave={saveDish}
+            onCancel={() => {
+              setIsDialogOpen(false);
+              setEditingDish(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
