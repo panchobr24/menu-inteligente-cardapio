@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -12,7 +13,7 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '2rem',
+			padding: '1rem',
 			screens: {
 				'2xl': '1400px'
 			}
@@ -52,21 +53,43 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+				// Custom food theme colors
+				appetite: {
+					50: 'hsl(15, 100%, 97%)',
+					100: 'hsl(15, 100%, 94%)',
+					200: 'hsl(15, 100%, 87%)',
+					300: 'hsl(15, 100%, 78%)',
+					400: 'hsl(15, 97%, 67%)',
+					500: 'hsl(15, 95%, 58%)',
+					600: 'hsl(15, 85%, 50%)',
+					700: 'hsl(15, 85%, 42%)',
+					800: 'hsl(15, 82%, 35%)',
+					900: 'hsl(15, 80%, 30%)',
+					950: 'hsl(15, 85%, 16%)'
+				},
+				nutrition: {
+					50: 'hsl(142, 76%, 96%)',
+					100: 'hsl(142, 72%, 91%)',
+					200: 'hsl(142, 77%, 80%)',
+					300: 'hsl(142, 76%, 65%)',
+					400: 'hsl(142, 69%, 48%)',
+					500: 'hsl(142, 71%, 39%)',
+					600: 'hsl(142, 76%, 31%)',
+					700: 'hsl(142, 75%, 25%)',
+					800: 'hsl(142, 70%, 21%)',
+					900: 'hsl(142, 65%, 17%)',
+					950: 'hsl(142, 80%, 9%)'
 				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			backgroundImage: {
+				'food-gradient': 'linear-gradient(135deg, hsl(15, 95%, 58%) 0%, hsl(15, 85%, 50%) 100%)',
+				'nutrition-gradient': 'linear-gradient(135deg, hsl(142, 71%, 39%) 0%, hsl(142, 76%, 31%) 100%)',
+				'hero-gradient': 'linear-gradient(135deg, hsl(15, 95%, 58%) 0%, hsl(142, 71%, 39%) 100%)'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +107,31 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'slide-up': {
+					from: {
+						transform: 'translateY(20px)',
+						opacity: '0'
+					},
+					to: {
+						transform: 'translateY(0)',
+						opacity: '1'
+					}
+				},
+				'fade-in': {
+					from: {
+						opacity: '0'
+					},
+					to: {
+						opacity: '1'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'slide-up': 'slide-up 0.3s ease-out',
+				'fade-in': 'fade-in 0.2s ease-out'
 			}
 		}
 	},
