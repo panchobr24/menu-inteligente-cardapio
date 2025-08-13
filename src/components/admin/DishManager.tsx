@@ -185,9 +185,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     }
   };
 
-  const openAddDialog = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const openAddDialog = () => {
     console.log('Opening add dialog');
     setEditingDish(null);
     setIsDialogOpen(true);
@@ -203,13 +201,6 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     console.log('Closing dialog');
     setIsDialogOpen(false);
     setEditingDish(null);
-  };
-
-  const handleDialogChange = (open: boolean) => {
-    console.log('Dialog onOpenChange called with:', open);
-    if (!open) {
-      closeDialog();
-    }
   };
 
   // Add debugging for dialog state
@@ -319,7 +310,12 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </Card>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        console.log('Dialog onOpenChange:', open);
+        if (!open) {
+          closeDialog();
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
