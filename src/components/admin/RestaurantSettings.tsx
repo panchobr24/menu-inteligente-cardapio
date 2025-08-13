@@ -40,14 +40,14 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fontOptions = [
-    { value: "Inter", label: "Inter (Moderno)" },
-    { value: "Playfair Display", label: "Playfair Display (Elegante)" },
-    { value: "Roboto", label: "Roboto (Limpo)" },
-    { value: "Open Sans", label: "Open Sans (Clássico)" },
-    { value: "Lora", label: "Lora (Serif)" },
-    { value: "Montserrat", label: "Montserrat (Geométrico)" },
-    { value: "Poppins", label: "Poppins (Amigável)" },
-    { value: "Source Sans Pro", label: "Source Sans Pro (Profissional)" }
+    { value: "Inter", label: "Inter (Moderno)", fallback: "sans-serif" },
+    { value: "Playfair Display", label: "Playfair Display (Elegante)", fallback: "serif" },
+    { value: "Roboto", label: "Roboto (Limpo)", fallback: "sans-serif" },
+    { value: "Open Sans", label: "Open Sans (Clássico)", fallback: "sans-serif" },
+    { value: "Lora", label: "Lora (Serif)", fallback: "serif" },
+    { value: "Montserrat", label: "Montserrat (Geométrico)", fallback: "sans-serif" },
+    { value: "Poppins", label: "Poppins (Amigável)", fallback: "sans-serif" },
+    { value: "Source Sans Pro", label: "Source Sans Pro (Profissional)", fallback: "sans-serif" }
   ];
 
   const headerStyleOptions = [
@@ -215,11 +215,36 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
               <SelectContent>
                 {fontOptions.map((font) => (
                   <SelectItem key={font.value} value={font.value}>
-                    <span style={{ fontFamily: font.value }}>{font.label}</span>
+                    <div className="flex items-center gap-3 w-full p-1">
+                      <span 
+                        className="text-lg font-medium bg-muted px-2 py-1 rounded"
+                        style={{ 
+                          fontFamily: `${font.value}, ${font.fallback}`,
+                          minWidth: '2rem',
+                          textAlign: 'center'
+                        }}
+                      >
+                        Aa
+                      </span>
+                      <span className="flex-1">{font.label}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            
+            {/* Preview da fonte selecionada */}
+            <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-1">Preview da fonte selecionada:</p>
+              <div 
+                className="text-lg font-medium"
+                style={{ 
+                  fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                }}
+              >
+                {formData.name || "Nome do Restaurante"}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -234,26 +259,121 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
               <SelectContent>
                 {headerStyleOptions.map((style) => (
                   <SelectItem key={style.value} value={style.value}>
-                    {style.label}
+                    <div className="flex items-center gap-3 w-full p-1">
+                      <div className="w-8 h-6 bg-primary/20 rounded border flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary">
+                          {style.value === 'modern' && 'M'}
+                          {style.value === 'classic' && 'C'}
+                          {style.value === 'banner' && 'B'}
+                          {style.value === 'minimal' && 'Mi'}
+                        </span>
+                      </div>
+                      <span className="flex-1">{style.label}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            
+            {/* Preview do estilo de cabeçalho */}
+            <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-2">Preview do estilo selecionado:</p>
+              <div className="border rounded-lg p-3 bg-background">
+                {formData.header_style === 'modern' && (
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold">
+                      {formData.name?.charAt(0) || 'R'}
+                    </div>
+                    <h3 className="font-bold text-lg">{formData.name || "Nome do Restaurante"}</h3>
+                  </div>
+                )}
+                {formData.header_style === 'classic' && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
+                      {formData.name?.charAt(0) || 'R'}
+                    </div>
+                    <h3 className="font-bold text-lg">{formData.name || "Nome do Restaurante"}</h3>
+                  </div>
+                )}
+                {formData.header_style === 'banner' && (
+                  <div className="bg-primary text-white p-3 rounded-lg text-center">
+                    <h3 className="font-bold text-lg">{formData.name || "Nome do Restaurante"}</h3>
+                  </div>
+                )}
+                {formData.header_style === 'minimal' && (
+                  <div className="text-center">
+                    <h3 className="font-bold text-lg border-b-2 border-primary pb-1">
+                      {formData.name || "Nome do Restaurante"}
+                    </h3>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="p-4 bg-muted rounded-lg">
             <div className="flex items-start gap-3">
               <Type className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div>
-                <h4 className="font-medium mb-1">Preview da Fonte</h4>
+                <h4 className="font-medium mb-1">Preview Completo</h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Veja como ficará o nome do seu restaurante
+                  Veja como ficará o cabeçalho do seu cardápio
                 </p>
-                <div 
-                  className="text-2xl font-bold text-foreground"
-                  style={{ fontFamily: formData.font_family }}
-                >
-                  {formData.name || "Nome do Restaurante"}
+                <div className="border rounded-lg p-4 bg-background">
+                  {formData.header_style === 'modern' && (
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
+                        {formData.name?.charAt(0) || 'R'}
+                      </div>
+                      <div 
+                        className="text-2xl font-bold text-foreground"
+                        style={{ 
+                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                        }}
+                      >
+                        {formData.name || "Nome do Restaurante"}
+                      </div>
+                    </div>
+                  )}
+                  {formData.header_style === 'classic' && (
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                        {formData.name?.charAt(0) || 'R'}
+                      </div>
+                      <div 
+                        className="text-2xl font-bold text-foreground"
+                        style={{ 
+                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                        }}
+                      >
+                        {formData.name || "Nome do Restaurante"}
+                      </div>
+                    </div>
+                  )}
+                  {formData.header_style === 'banner' && (
+                    <div className="bg-primary text-white p-4 rounded-lg text-center">
+                      <div 
+                        className="text-2xl font-bold"
+                        style={{ 
+                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                        }}
+                      >
+                        {formData.name || "Nome do Restaurante"}
+                      </div>
+                    </div>
+                  )}
+                  {formData.header_style === 'minimal' && (
+                    <div className="text-center">
+                      <div 
+                        className="text-2xl font-bold border-b-2 border-primary pb-2"
+                        style={{ 
+                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                        }}
+                      >
+                        {formData.name || "Nome do Restaurante"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

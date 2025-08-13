@@ -114,9 +114,9 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      toast.error("Nome do prato é obrigatório");
-      return false;
-    }
+        toast.error("Nome do prato é obrigatório");
+        return false;
+      }
 
     const price = parseFloat(formData.price);
     if (isNaN(price) || price <= 0) {
@@ -141,8 +141,8 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
     if (formData.fat && (isNaN(parseFloat(formData.fat)) || parseFloat(formData.fat) < 0)) {
       toast.error("Gordura deve ser um número válido");
-      return false;
-    }
+        return false;
+      }
 
     return true;
   };
@@ -379,8 +379,8 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
           <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
-                {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
-              </h3>
+              {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
+            </h3>
               <Button
                 variant="ghost"
                 size="sm"
