@@ -115,6 +115,14 @@ const PublicMenu = () => {
 
       if (error) throw error;
       setDishes(data || []);
+      
+      // Set initial price and calorie ranges based on actual data
+      if (data && data.length > 0) {
+        const maxPrice = Math.max(...data.map(d => d.price), 100);
+        const maxCalories = Math.max(...data.map(d => d.calories || 0), 1000);
+        setPriceRange([0, maxPrice]);
+        setCalorieRange([0, maxCalories]);
+      }
     } catch (error) {
       console.error('Erro ao buscar pratos:', error);
       toast.error("Erro ao carregar cardápio");
@@ -164,8 +172,10 @@ const PublicMenu = () => {
   const clearFilters = () => {
     setSelectedDietTags([]);
     setSelectedTags([]);
-    setPriceRange([0, 100]);
-    setCalorieRange([0, 1000]);
+    const maxPrice = Math.max(...dishes.map(d => d.price), 100);
+    const maxCalories = Math.max(...dishes.map(d => d.calories || 0), 1000);
+    setPriceRange([0, maxPrice]);
+    setCalorieRange([0, maxCalories]);
     setSearchTerm("");
   };
 

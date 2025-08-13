@@ -2,206 +2,174 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 import { X, Zap, Beef, DollarSign, Heart } from "lucide-react";
 
-interface DietFilter {
-  id: string;
-  label: string;
-  icon: React.ComponentType<any>;
-}
-
 interface ModernFilterPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  dietFilters: DietFilter[];
-  selectedDietFilters: string[];
-  onToggleDietFilter: (filterId: string) => void;
+  availableDietTags: string[];
+  availableTags: string[];
+  selectedDietTags: string[];
+  selectedTags: string[];
   priceRange: number[];
-  onPriceRangeChange: (value: number[]) => void;
   calorieRange: number[];
-  onCalorieRangeChange: (value: number[]) => void;
-  proteinRange: number[];
-  onProteinRangeChange: (value: number[]) => void;
+  onDietTagsChange: (tags: string[]) => void;
+  onTagsChange: (tags: string[]) => void;
+  onPriceRangeChange: (range: number[]) => void;
+  onCalorieRangeChange: (range: number[]) => void;
+  onClearFilters: () => void;
   maxPrice: number;
   maxCalories: number;
-  onApplyFilters: () => void;
-  onClearFilters: () => void;
 }
 
 const ModernFilterPanel = ({
-  isOpen,
-  onClose,
-  dietFilters,
-  selectedDietFilters,
-  onToggleDietFilter,
+  availableDietTags,
+  availableTags,
+  selectedDietTags,
+  selectedTags,
   priceRange,
   onPriceRangeChange,
   calorieRange,
   onCalorieRangeChange,
-  proteinRange,
-  onProteinRangeChange,
+  onDietTagsChange,
+  onTagsChange,
   maxPrice,
   maxCalories,
-  onApplyFilters,
   onClearFilters
 }: ModernFilterPanelProps) => {
-  const hasActiveFilters = selectedDietFilters.length > 0 || 
-    priceRange[0] < maxPrice || 
-    calorieRange[0] < maxCalories || 
-    proteinRange[0] > 0;
+  const hasActiveFilters = selectedDietTags.length > 0 || 
+    selectedTags.length > 0 ||
+    priceRange[0] > 0 || priceRange[1] < maxPrice ||
+    calorieRange[0] > 0 || calorieRange[1] < maxCalories;
+
+  const toggleDietTag = (tag: string) => {
+    if (selectedDietTags.includes(tag)) {
+      onDietTagsChange(selectedDietTags.filter(t => t !== tag));
+    } else {
+      onDietTagsChange([...selectedDietTags, tag]);
+    }
+  };
+
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      onTagsChange(selectedTags.filter(t => t !== tag));
+    } else {
+      onTagsChange([...selectedTags, tag]);
+    }
+  };
+
+  const getDietTagDisplay = (tag: string) => {
+    const tagMap: { [key: string]: { label: string; color: string } } = {
+      'vegano': { label: 'Vegano', color: 'bg-green-100 text-green-800' },
+      'vegetariano': { label: 'Vegetariano', color: 'bg-green-100 text-green-800' },
+      'low-carb': { label: 'Low Carb', color: 'bg-blue-100 text-blue-800' },
+      'sem-gluten': { label: 'Sem Glúten', color: 'bg-purple-100 text-purple-800' },
+      'sem-lactose': { label: 'Sem Lactose', color: 'bg-orange-100 text-orange-800' },
+      'keto': { label: 'Keto', color: 'bg-red-100 text-red-800' }
+    };
+    
+    return tagMap[tag] || { label: tag, color: 'bg-gray-100 text-gray-800' };
+  };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
-        <SheetHeader className="text-left">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-2xl font-bold">Filtros Inteligentes</SheetTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-          <p className="text-muted-foreground">
-            Encontre exatamente o que você está procurando
-          </p>
-        </SheetHeader>
-
-        <div className="space-y-8 py-6">
-          {/* Dietary Preferences */}
-          <div>
-            <h3 className="font-semibold mb-4 flex items-center gap-2 text-lg">
-              <Heart className="w-5 h-5 text-primary" />
-              Preferências Alimentares
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {dietFilters.map((filter) => {
-                const Icon = filter.icon;
-                const isSelected = selectedDietFilters.includes(filter.id);
-                
-                return (
-                  <Button
-                    key={filter.id}
-                    variant="outline"
-                    className={`p-4 h-auto flex flex-col gap-3 transition-all ${
-                      isSelected 
-                        ? 'bg-primary text-primary-foreground border-primary shadow-md' 
-                        : 'hover:bg-accent/50 hover:border-primary/30'
-                    }`}
-                    onClick={() => onToggleDietFilter(filter.id)}
-                  >
-                    <Icon className="w-6 h-6" />
-                    <span className="text-sm font-medium">{filter.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Price Range */}
-          <div>
-            <h3 className="font-semibold mb-4 flex items-center gap-2 text-lg">
-              <DollarSign className="w-5 h-5 text-primary" />
-              Faixa de Preço
-            </h3>
-            
-            <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10">
-              <div className="mb-4">
-                <span className="text-3xl font-bold text-primary">
-                  R$ {priceRange[0].toFixed(2)}
-                </span>
-                <span className="text-muted-foreground ml-2">máximo</span>
-              </div>
-              <Slider
-                value={priceRange}
-                onValueChange={onPriceRangeChange}
-                max={maxPrice}
-                min={0}
-                step={5}
-                className="slider-primary"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                <span>R$ 0</span>
-                <span>R$ {maxPrice.toFixed(2)}</span>
-              </div>
-            </Card>
-          </div>
-
-          {/* Nutritional Goals */}
-          <div>
-            <h3 className="font-semibold mb-4 flex items-center gap-2 text-lg">
-              <Zap className="w-5 h-5 text-primary" />
-              Metas Nutricionais
-            </h3>
-            
-            <div className="space-y-6">
-              {/* Calories */}
-              <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <Zap className="w-5 h-5 text-orange-600" />
-                  <span className="font-medium">Máximo de Calorias</span>
-                </div>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-orange-600">
-                    {calorieRange[0]}
-                  </span>
-                  <span className="text-muted-foreground ml-2">kcal</span>
-                </div>
-                <Slider
-                  value={calorieRange}
-                  onValueChange={onCalorieRangeChange}
-                  max={maxCalories}
-                  min={0}
-                  step={50}
-                  className="slider-orange"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                  <span>0 kcal</span>
-                  <span>{maxCalories} kcal</span>
-                </div>
-              </Card>
-
-              {/* Protein */}
-              <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <Beef className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">Mínimo de Proteína</span>
-                </div>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-green-600">
-                    {proteinRange[0]}
-                  </span>
-                  <span className="text-muted-foreground ml-2">g</span>
-                </div>
-                <Slider
-                  value={proteinRange}
-                  onValueChange={onProteinRangeChange}
-                  max={80}
-                  min={0}
-                  step={5}
-                  className="slider-green"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                  <span>0g</span>
-                  <span>80g</span>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-6 border-t bg-white sticky bottom-0">
-          {hasActiveFilters && (
-            <Button variant="outline" onClick={onClearFilters} className="flex-1">
-              Limpar Filtros
-            </Button>
-          )}
-          <Button onClick={onApplyFilters} className="flex-1 bg-primary hover:bg-primary/90">
-            Aplicar Filtros
+    <Card className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Heart className="w-5 h-5 text-primary" />
+          Filtros
+        </h3>
+        {hasActiveFilters && (
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
+            <X className="w-4 h-4 mr-2" />
+            Limpar
           </Button>
+        )}
+      </div>
+
+      {/* Dietary Preferences */}
+      {availableDietTags.length > 0 && (
+        <div>
+          <h4 className="font-medium mb-3 text-sm">Preferências Alimentares</h4>
+          <div className="flex flex-wrap gap-2">
+            {availableDietTags.map((tag) => {
+              const tagDisplay = getDietTagDisplay(tag);
+              const isSelected = selectedDietTags.includes(tag);
+              
+              return (
+                <Badge
+                  key={tag}
+                  variant={isSelected ? "default" : "outline"}
+                  className={`cursor-pointer transition-colors ${
+                    isSelected ? tagDisplay.color : 'hover:bg-accent'
+                  }`}
+                  onClick={() => toggleDietTag(tag)}
+                >
+                  {tagDisplay.label}
+                </Badge>
+              );
+            })}
+          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+
+      {/* General Tags */}
+      {availableTags.length > 0 && (
+        <div>
+          <h4 className="font-medium mb-3 text-sm">Características</h4>
+          <div className="flex flex-wrap gap-2">
+            {availableTags.map((tag) => (
+              <Badge
+                key={tag}
+                variant={selectedTags.includes(tag) ? "default" : "outline"}
+                className="cursor-pointer transition-colors hover:bg-accent"
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Price Range */}
+      <div>
+        <h4 className="font-medium mb-3 text-sm flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-primary" />
+          Faixa de Preço: R$ {priceRange[0]} - R$ {priceRange[1]}
+        </h4>
+        <Slider
+          value={priceRange}
+          onValueChange={onPriceRangeChange}
+          max={maxPrice}
+          min={0}
+          step={5}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <span>R$ 0</span>
+          <span>R$ {maxPrice}</span>
+        </div>
+      </div>
+
+      {/* Calorie Range */}
+      <div>
+        <h4 className="font-medium mb-3 text-sm flex items-center gap-2">
+          <Zap className="w-4 h-4 text-orange-500" />
+          Máximo de Calorias: {calorieRange[1]} kcal
+        </h4>
+        <Slider
+          value={calorieRange}
+          onValueChange={onCalorieRangeChange}
+          max={maxCalories}
+          min={0}
+          step={50}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <span>0 kcal</span>
+          <span>{maxCalories} kcal</span>
+        </div>
+      </div>
+    </Card>
   );
 };
 
