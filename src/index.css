@@ -128,34 +128,24 @@ body {
     @apply bg-primary/20;
   }
 
-  .slider-orange [data-orientation="horizontal"] {
-    @apply bg-orange-200;
+  /* Select dropdown visibility fixes */
+  [data-radix-select-content] {
+    background-color: white !important;
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
   }
 
-  .slider-green [data-orientation="horizontal"] {
-    @apply bg-green-200;
+  [data-radix-select-item] {
+    color: #111827 !important;
   }
 
-  /* Animation classes */
-  .animate-in {
-    animation: slideInUp 0.5s ease-out forwards;
-    opacity: 0;
-    transform: translateY(20px);
+  [data-radix-select-item]:hover {
+    background-color: #f3f4f6 !important;
   }
 
-  /* Line clamp utilities */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  [data-radix-select-item][data-highlighted] {
+    background-color: #e5e7eb !important;
   }
 }
 
