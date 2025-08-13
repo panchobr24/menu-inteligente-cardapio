@@ -63,6 +63,11 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     fetchDishes();
   }, [restaurant.id]);
 
+  // Debug: monitorar mudanças no estado do dialog
+  useEffect(() => {
+    console.log('Estado do dialog mudou:', { isDialogOpen, editingDish: editingDish?.id });
+  }, [isDialogOpen, editingDish]);
+
   const fetchDishes = async () => {
     try {
       const { data } = await supabase
@@ -191,10 +196,8 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     setIsDialogOpen(true);
     console.log('Estado atualizado:', { editingDish: null, isDialogOpen: true });
     
-    // Teste adicional para verificar se o estado foi atualizado
-    setTimeout(() => {
-      console.log('Estado após timeout:', { editingDish: editingDish?.id, isDialogOpen });
-    }, 100);
+    // Debug: verificar se o estado foi atualizado
+    console.log('Estado atual do componente:', { editingDish, isDialogOpen });
   };
 
   const openEditDialog = (dish: Dish) => {
@@ -224,42 +227,12 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </div>
         
         <Button 
-          onClick={() => {
-            console.log('Botão clicado inline');
-            openAddDialog();
-          }} 
+          onClick={openAddDialog} 
           type="button"
-          style={{ 
-            backgroundColor: '#3b82f6', 
-            color: 'white',
-            padding: '8px 16px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Prato
         </Button>
-        
-        {/* Botão de teste HTML simples */}
-        <button 
-          onClick={() => {
-            console.log('Botão HTML clicado');
-            alert('Botão HTML funcionando!');
-          }}
-          style={{ 
-            backgroundColor: '#ef4444', 
-            color: 'white',
-            padding: '8px 16px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            marginLeft: '10px'
-          }}
-        >
-          Teste HTML
-        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -354,12 +327,23 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
               {editingDish ? "Modifique as informações do prato abaixo." : "Preencha as informações do novo prato abaixo."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {/* Teste simples para verificar se o dialog está funcionando */}
+          <div className="p-4">
+            <p>Dialog está funcionando! Estado: {isDialogOpen ? 'Aberto' : 'Fechado'}</p>
+            <Button onClick={closeDialog} className="mt-4">
+              Fechar Dialog
+            </Button>
+          </div>
+          
+          {/* DishForm temporariamente comentado para teste
           <DishForm
             dish={editingDish}
             initialData={initialDishData}
             onSave={saveDish}
             onCancel={closeDialog}
           />
+          */}
         </AlertDialogContent>
       </AlertDialog>
     </div>
