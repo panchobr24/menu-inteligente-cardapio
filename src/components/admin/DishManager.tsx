@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2 } from "lucide-react";
@@ -310,26 +310,24 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </Card>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        console.log('Dialog onOpenChange:', open);
-        if (!open) {
-          closeDialog();
-        }
-      }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
+      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
               {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
-            </DialogTitle>
-          </DialogHeader>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingDish ? "Modifique as informações do prato abaixo." : "Preencha as informações do novo prato abaixo."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           <DishForm
             dish={editingDish}
             initialData={initialDishData}
             onSave={saveDish}
             onCancel={closeDialog}
           />
-        </DialogContent>
-      </Dialog>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
