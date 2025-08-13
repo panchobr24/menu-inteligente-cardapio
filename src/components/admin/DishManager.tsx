@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -206,6 +205,13 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     setEditingDish(null);
   };
 
+  const handleDialogChange = (open: boolean) => {
+    console.log('Dialog onOpenChange called with:', open);
+    if (!open) {
+      closeDialog();
+    }
+  };
+
   // Add debugging for dialog state
   console.log('Dialog state:', { isDialogOpen, editingDish: editingDish?.id });
 
@@ -313,7 +319,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </Card>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
