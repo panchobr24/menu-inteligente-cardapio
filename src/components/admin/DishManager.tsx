@@ -186,25 +186,26 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
   };
 
   const openAddDialog = () => {
-    console.log('Opening add dialog');
+    console.log('Botão clicado - abrindo dialog');
     setEditingDish(null);
     setIsDialogOpen(true);
+    console.log('Estado atualizado:', { editingDish: null, isDialogOpen: true });
+    
+    // Teste adicional para verificar se o estado foi atualizado
+    setTimeout(() => {
+      console.log('Estado após timeout:', { editingDish: editingDish?.id, isDialogOpen });
+    }, 100);
   };
 
   const openEditDialog = (dish: Dish) => {
-    console.log('Opening edit dialog for dish:', dish.id);
     setEditingDish(dish);
     setIsDialogOpen(true);
   };
 
   const closeDialog = () => {
-    console.log('Closing dialog');
     setIsDialogOpen(false);
     setEditingDish(null);
   };
-
-  // Add debugging for dialog state
-  console.log('Dialog state:', { isDialogOpen, editingDish: editingDish?.id });
 
   if (loading) {
     return (
@@ -222,10 +223,43 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
           <p className="text-muted-foreground">Adicione, edite ou remova pratos do seu cardápio</p>
         </div>
         
-        <Button onClick={openAddDialog} type="button">
+        <Button 
+          onClick={() => {
+            console.log('Botão clicado inline');
+            openAddDialog();
+          }} 
+          type="button"
+          style={{ 
+            backgroundColor: '#3b82f6', 
+            color: 'white',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Prato
         </Button>
+        
+        {/* Botão de teste HTML simples */}
+        <button 
+          onClick={() => {
+            console.log('Botão HTML clicado');
+            alert('Botão HTML funcionando!');
+          }}
+          style={{ 
+            backgroundColor: '#ef4444', 
+            color: 'white',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            marginLeft: '10px'
+          }}
+        >
+          Teste HTML
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
