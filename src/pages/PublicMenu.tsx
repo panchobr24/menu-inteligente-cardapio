@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -187,8 +186,8 @@ const PublicMenu = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Skeleton className="h-32 w-full rounded-lg" />
+        <div className="max-w-6xl mx-auto space-y-6">
+          <Skeleton className="h-48 w-full rounded-lg" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Skeleton key={i} className="h-64 w-full rounded-lg" />
@@ -219,82 +218,80 @@ const PublicMenu = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
+      {/* Enhanced Header with Better Logo Placement */}
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              {restaurant.logo_url && (
+        <div className="max-w-6xl mx-auto">
+          {/* Logo Banner Section */}
+          {restaurant.logo_url && (
+            <div className="relative h-32 bg-gradient-to-r from-primary/10 to-secondary/10 overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <img
                   src={restaurant.logo_url}
                   alt={`${restaurant.name} logo`}
-                  className="w-16 h-16 object-cover rounded-lg border"
+                  className="h-24 w-auto object-contain drop-shadow-lg"
                 />
-              )}
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">{restaurant.name}</h1>
-                {restaurant.description && (
-                  <p className="text-muted-foreground mt-1">{restaurant.description}</p>
-                )}
               </div>
             </div>
-            
-            {isOwner && (
-              <Link to="/admin">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Gerenciar Restaurante
-                </Button>
-              </Link>
+          )}
+          
+          {/* Restaurant Info Section */}
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{restaurant.name}</h1>
+              {restaurant.description && (
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                  {restaurant.description}
+                </p>
+              )}
+            </div>
+
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Buscar pratos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filtrar
+              </Button>
+            </div>
+
+            {/* Modern Filter Panel */}
+            {showFilters && (
+              <div className="mt-6 max-w-4xl mx-auto">
+                <ModernFilterPanel
+                  availableDietTags={getUniqueValues('diet_tags')}
+                  availableTags={getUniqueValues('tags')}
+                  selectedDietTags={selectedDietTags}
+                  selectedTags={selectedTags}
+                  priceRange={priceRange}
+                  calorieRange={calorieRange}
+                  onDietTagsChange={setSelectedDietTags}
+                  onTagsChange={setSelectedTags}
+                  onPriceRangeChange={setPriceRange}
+                  onCalorieRangeChange={setCalorieRange}
+                  onClearFilters={clearFilters}
+                  maxPrice={Math.max(...dishes.map(d => d.price), 100)}
+                  maxCalories={Math.max(...dishes.map(d => d.calories || 0), 1000)}
+                />
+              </div>
             )}
           </div>
-
-          {/* Search and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Buscar pratos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Filtrar
-            </Button>
-          </div>
-
-          {/* Modern Filter Panel */}
-          {showFilters && (
-            <div className="mt-6">
-              <ModernFilterPanel
-                availableDietTags={getUniqueValues('diet_tags')}
-                availableTags={getUniqueValues('tags')}
-                selectedDietTags={selectedDietTags}
-                selectedTags={selectedTags}
-                priceRange={priceRange}
-                calorieRange={calorieRange}
-                onDietTagsChange={setSelectedDietTags}
-                onTagsChange={setSelectedTags}
-                onPriceRangeChange={setPriceRange}
-                onCalorieRangeChange={setCalorieRange}
-                onClearFilters={clearFilters}
-                maxPrice={Math.max(...dishes.map(d => d.price), 100)}
-                maxCalories={Math.max(...dishes.map(d => d.calories || 0), 1000)}
-              />
-            </div>
-          )}
         </div>
       </div>
 
       {/* Menu Content */}
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6">
         {filteredDishes.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
@@ -313,7 +310,7 @@ const PublicMenu = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredDishes.map((dish) => (
               <DishCard
                 key={dish.id}

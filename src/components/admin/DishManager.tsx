@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
+import DishForm from "@/components/admin/DishForm";
 
 interface Restaurant {
   id: string;
@@ -87,12 +87,12 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
       // Ensure required fields are present
       if (!dishData.name || dishData.name.trim() === '') {
         toast.error("Nome do prato é obrigatório");
-        return;
+        return false;
       }
 
       if (!dishData.price || dishData.price <= 0) {
         toast.error("Preço deve ser maior que zero");
-        return;
+        return false;
       }
 
       if (editingDish?.id) {
@@ -145,12 +145,13 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         toast.success("Prato criado com sucesso!");
       }
 
-      fetchDishes();
-      setIsDialogOpen(false);
-      setEditingDish(null);
+      await fetchDishes();
+      closeDialog();
+      return true;
     } catch (error) {
       console.error('Erro ao salvar prato:', error);
       toast.error("Erro ao salvar prato");
+      return false;
     }
   };
 
@@ -195,6 +196,11 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
   const openEditDialog = (dish: Dish) => {
     setEditingDish(dish);
     setIsDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setEditingDish(null);
   };
 
   if (loading) {
@@ -301,8 +307,12 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </Card>
       )}
 
-      {/* Dish Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Fixed Dish Form Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          closeDialog();
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -313,165 +323,10 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
             dish={editingDish}
             initialData={initialDishData}
             onSave={saveDish}
-            onCancel={() => {
-              setIsDialogOpen(false);
-              setEditingDish(null);
-            }}
+            onCancel={closeDialog}
           />
         </DialogContent>
       </Dialog>
-    </div>
-  );
-};
-
-// Dish Form Component
-interface DishFormProps {
-  dish: Dish | null;
-  initialData: any;
-  onSave: (data: any) => void;
-  onCancel: () => void;
-}
-
-const DishForm = ({ dish, initialData, onSave, onCancel }: DishFormProps) => {
-  const [formData, setFormData] = useState(dish || initialData);
-  const [tags, setTags] = useState<string>(dish?.tags.join(', ') || '');
-  const [dietTags, setDietTags] = useState<string>(dish?.diet_tags.join(', ') || '');
-
-  const handleSubmit = () => {
-    const data = {
-      ...formData,
-      tags: tags.split(',').map(t => t.trim()).filter(t => t),
-      diet_tags: dietTags.split(',').map(t => t.trim()).filter(t => t)
-    };
-    onSave(data);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Nome do Prato</Label>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Ex: Salmão Grelhado"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Preço (R$)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-            placeholder="0.00"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Descrição Breve</Label>
-        <Input
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Descrição que aparece no card"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Descrição Completa</Label>
-        <Textarea
-          value={formData.full_description}
-          onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
-          placeholder="Descrição detalhada que aparece no modal"
-          rows={3}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>URL da Imagem</Label>
-        <Input
-          value={formData.image_url || ''}
-          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-          placeholder="https://exemplo.com/imagem.jpg"
-        />
-      </div>
-
-      <div className="grid grid-cols-4 gap-4">
-        <div className="space-y-2">
-          <Label>Calorias</Label>
-          <Input
-            type="number"
-            value={formData.calories || ''}
-            onChange={(e) => setFormData({ ...formData, calories: parseInt(e.target.value) || 0 })}
-            placeholder="kcal"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Proteína (g)</Label>
-          <Input
-            type="number"
-            value={formData.protein || ''}
-            onChange={(e) => setFormData({ ...formData, protein: parseInt(e.target.value) || 0 })}
-            placeholder="g"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Carboidratos (g)</Label>
-          <Input
-            type="number"
-            value={formData.carbs || ''}
-            onChange={(e) => setFormData({ ...formData, carbs: parseInt(e.target.value) || 0 })}
-            placeholder="g"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Gorduras (g)</Label>
-          <Input
-            type="number"
-            value={formData.fat || ''}
-            onChange={(e) => setFormData({ ...formData, fat: parseInt(e.target.value) || 0 })}
-            placeholder="g"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Tags (separadas por vírgula)</Label>
-        <Input
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="Ex: Low Carb, Rico em Proteína"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Restrições Alimentares (separadas por vírgula)</Label>
-        <Input
-          value={dietTags}
-          onChange={(e) => setDietTags(e.target.value)}
-          placeholder="Ex: vegano, sem-gluten, sem-lactose"
-        />
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={formData.is_available}
-          onCheckedChange={(checked) => setFormData({ ...formData, is_available: checked })}
-        />
-        <Label>Disponível no cardápio</Label>
-      </div>
-
-      <div className="flex gap-3 pt-4">
-        <Button onClick={handleSubmit} className="flex-1">
-          <Save className="w-4 h-4 mr-2" />
-          Salvar
-        </Button>
-        <Button variant="outline" onClick={onCancel}>
-          <X className="w-4 h-4 mr-2" />
-          Cancelar
-        </Button>
-      </div>
     </div>
   );
 };

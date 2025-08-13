@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Save, Upload, Store, Image } from "lucide-react";
+import { Save, Upload, Store, Image, Palette, Type } from "lucide-react";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 
 interface Restaurant {
@@ -17,6 +18,8 @@ interface Restaurant {
   logo_url: string;
   primary_color: string;
   secondary_color: string;
+  font_family?: string;
+  header_style?: string;
 }
 
 interface RestaurantSettingsProps {
@@ -28,11 +31,31 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
   const [formData, setFormData] = useState({
     name: restaurant.name,
     description: restaurant.description || "",
-    logo_url: restaurant.logo_url || ""
+    logo_url: restaurant.logo_url || "",
+    font_family: restaurant.font_family || "Inter",
+    header_style: restaurant.header_style || "modern"
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fontOptions = [
+    { value: "Inter", label: "Inter (Moderno)" },
+    { value: "Playfair Display", label: "Playfair Display (Elegante)" },
+    { value: "Roboto", label: "Roboto (Limpo)" },
+    { value: "Open Sans", label: "Open Sans (Clássico)" },
+    { value: "Lora", label: "Lora (Serif)" },
+    { value: "Montserrat", label: "Montserrat (Geométrico)" },
+    { value: "Poppins", label: "Poppins (Amigável)" },
+    { value: "Source Sans Pro", label: "Source Sans Pro (Profissional)" }
+  ];
+
+  const headerStyleOptions = [
+    { value: "modern", label: "Moderno (Logo centralizada)" },
+    { value: "classic", label: "Clássico (Logo à esquerda)" },
+    { value: "banner", label: "Banner (Logo em destaque)" },
+    { value: "minimal", label: "Minimalista (Apenas texto)" }
+  ];
 
   const handleSave = async () => {
     setLoading(true);
@@ -166,13 +189,84 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
               </div>
             )}
           </div>
-
-          <Button onClick={handleSave} disabled={loading} className="w-full">
-            <Save className="w-4 h-4 mr-2" />
-            {loading ? "Salvando..." : "Salvar Configurações"}
-          </Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="w-5 h-5" />
+            Personalização Visual
+          </CardTitle>
+          <CardDescription>
+            Customize a aparência do seu cardápio público
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="font_family">Fonte Principal</Label>
+            <Select
+              value={formData.font_family}
+              onValueChange={(value) => setFormData({ ...formData, font_family: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma fonte" />
+              </SelectTrigger>
+              <SelectContent>
+                {fontOptions.map((font) => (
+                  <SelectItem key={font.value} value={font.value}>
+                    <span style={{ fontFamily: font.value }}>{font.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="header_style">Estilo do Cabeçalho</Label>
+            <Select
+              value={formData.header_style}
+              onValueChange={(value) => setFormData({ ...formData, header_style: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                {headerStyleOptions.map((style) => (
+                  <SelectItem key={style.value} value={style.value}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="flex items-start gap-3">
+              <Type className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <div>
+                <h4 className="font-medium mb-1">Preview da Fonte</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Veja como ficará o nome do seu restaurante
+                </p>
+                <div 
+                  className="text-2xl font-bold text-foreground"
+                  style={{ fontFamily: formData.font_family }}
+                >
+                  {formData.name || "Nome do Restaurante"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex gap-4">
+        <Button onClick={handleSave} disabled={loading} className="flex-1">
+          <Save className="w-4 h-4 mr-2" />
+          {loading ? "Salvando..." : "Salvar Configurações"}
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
