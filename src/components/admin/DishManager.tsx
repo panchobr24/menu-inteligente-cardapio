@@ -3,11 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2 } from "lucide-react";
-import DishForm from "@/components/admin/DishForm";
 
 interface Restaurant {
   id: string;
@@ -42,7 +40,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showSimpleDialog, setShowSimpleDialog] = useState(false);
 
   const initialDishData = {
     name: "",
@@ -62,11 +60,6 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
   useEffect(() => {
     fetchDishes();
   }, [restaurant.id]);
-
-  // Debug: monitorar mudanças no estado do dialog
-  useEffect(() => {
-    console.log('Estado do dialog mudou:', { isDialogOpen, editingDish: editingDish?.id });
-  }, [isDialogOpen, editingDish]);
 
   const fetchDishes = async () => {
     try {
@@ -148,7 +141,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
       }
 
       await fetchDishes();
-      closeDialog();
+      closeSimpleDialog();
       return true;
     } catch (error) {
       console.error('Erro ao salvar prato:', error);
@@ -191,23 +184,19 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
   };
 
   const openAddDialog = () => {
-    console.log('Botão clicado - abrindo dialog');
-    setEditingDish(null);
-    setIsDialogOpen(true);
-    console.log('Estado atualizado:', { editingDish: null, isDialogOpen: true });
-    
-    // Debug: verificar se o estado foi atualizado
-    console.log('Estado atual do componente:', { editingDish, isDialogOpen });
+    console.log('Botão clicado - abrindo dialog simples');
+    setShowSimpleDialog(true);
+    console.log('Estado atualizado - showSimpleDialog:', true);
   };
 
   const openEditDialog = (dish: Dish) => {
     setEditingDish(dish);
-    setIsDialogOpen(true);
+    setShowSimpleDialog(true);
   };
 
-  const closeDialog = () => {
-    setIsDialogOpen(false);
-    setEditingDish(null);
+  const closeSimpleDialog = () => {
+    console.log('Fechando dialog simples');
+    setShowSimpleDialog(false);
   };
 
   if (loading) {
@@ -317,35 +306,26 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </Card>
       )}
 
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+      {showSimpleDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
               {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {editingDish ? "Modifique as informações do prato abaixo." : "Preencha as informações do novo prato abaixo."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          {/* Teste simples para verificar se o dialog está funcionando */}
-          <div className="p-4">
-            <p>Dialog está funcionando! Estado: {isDialogOpen ? 'Aberto' : 'Fechado'}</p>
-            <Button onClick={closeDialog} className="mt-4">
-              Fechar Dialog
-            </Button>
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Dialog de teste funcionando! Estado: {showSimpleDialog ? 'Aberto' : 'Fechado'}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={closeSimpleDialog}>
+                Cancelar
+              </Button>
+              <Button onClick={closeSimpleDialog}>
+                Confirmar
+              </Button>
+            </div>
           </div>
-          
-          {/* DishForm temporariamente comentado para teste
-          <DishForm
-            dish={editingDish}
-            initialData={initialDishData}
-            onSave={saveDish}
-            onCancel={closeDialog}
-          />
-          */}
-        </AlertDialogContent>
-      </AlertDialog>
+        </div>
+      )}
     </div>
   );
 };
