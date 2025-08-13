@@ -1,15 +1,13 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Save, X } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import DishForm from "@/components/admin/DishForm";
 
 interface Restaurant {
@@ -188,20 +186,28 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     }
   };
 
-  const openAddDialog = () => {
+  const openAddDialog = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Opening add dialog');
     setEditingDish(null);
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (dish: Dish) => {
+    console.log('Opening edit dialog for dish:', dish.id);
     setEditingDish(dish);
     setIsDialogOpen(true);
   };
 
   const closeDialog = () => {
+    console.log('Closing dialog');
     setIsDialogOpen(false);
     setEditingDish(null);
   };
+
+  // Add debugging for dialog state
+  console.log('Dialog state:', { isDialogOpen, editingDish: editingDish?.id });
 
   if (loading) {
     return (
@@ -219,7 +225,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
           <p className="text-muted-foreground">Adicione, edite ou remova pratos do seu cardápio</p>
         </div>
         
-        <Button onClick={openAddDialog}>
+        <Button onClick={openAddDialog} type="button">
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Prato
         </Button>
@@ -299,7 +305,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
             <p className="text-muted-foreground mb-4">
               Comece adicionando o primeiro prato ao seu cardápio
             </p>
-            <Button onClick={openAddDialog}>
+            <Button onClick={openAddDialog} type="button">
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Primeiro Prato
             </Button>
@@ -307,12 +313,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         </Card>
       )}
 
-      {/* Fixed Dish Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          closeDialog();
-        }
-      }}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
