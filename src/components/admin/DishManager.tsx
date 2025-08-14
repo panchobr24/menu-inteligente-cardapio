@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +6,10 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, Image, Upload } from "lucide-react";
 
 interface Restaurant {
   id: string;
@@ -45,6 +46,8 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -56,9 +59,19 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     carbs: "",
     fat: "",
     tags: "",
-    diet_tags: "",
+    diet_tags: [] as string[],
     is_available: true
   });
+
+  // Opções de tags dietéticas baseadas nos filtros existentes
+  const dietTagOptions = [
+    { value: "vegano", label: "Vegano", color: "bg-green-100 text-green-800" },
+    { value: "vegetariano", label: "Vegetariano", color: "bg-green-100 text-green-800" },
+    { value: "low-carb", label: "Low Carb", color: "bg-blue-100 text-blue-800" },
+    { value: "sem-gluten", label: "Sem Glúten", color: "bg-purple-100 text-purple-800" },
+    { value: "sem-lactose", label: "Sem Lactose", color: "bg-orange-100 text-orange-800" },
+    { value: "keto", label: "Keto", color: "bg-red-100 text-red-800" }
+  ];
 
   const initialFormData = {
     name: "",
@@ -71,7 +84,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     carbs: "",
     fat: "",
     tags: "",
-    diet_tags: "",
+    diet_tags: [] as string[],
     is_available: true
   };
 
@@ -98,11 +111,82 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     }
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // Formatação de preço em reais
+  const formatPrice = (value: string) => {
+    // Remove tudo que não é número
+    const numericValue = value.replace(/\D/g, '');
+    
+    if (numericValue === '') return '';
+    
+    // Converte para centavos e formata
+    const cents = parseInt(numericValue);
+    const reais = (cents / 100).toFixed(2);
+    
+    return reais;
+  };
+
+  const handlePriceChange = (value: string) => {
+    const formattedPrice = formatPrice(value);
+    handleInputChange('price', formattedPrice);
+  };
+
+  // Upload de imagem
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validação do arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor, selecione um arquivo de imagem");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 5MB");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${restaurant.id}-dish-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('dish-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('dish-images')
+        .getPublicUrl(fileName);
+
+      handleInputChange('image_url', publicUrl);
+      toast.success("Imagem enviada com sucesso!");
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error("Erro ao fazer upload da imagem");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Seleção múltipla de tags dietéticas
+  const toggleDietTag = (tagValue: string) => {
+    const currentTags = formData.diet_tags;
+    if (currentTags.includes(tagValue)) {
+      handleInputChange('diet_tags', currentTags.filter(tag => tag !== tagValue));
+    } else {
+      handleInputChange('diet_tags', [...currentTags, tagValue]);
+    }
   };
 
   const parseTags = (tagsString: string): string[] => {
@@ -114,9 +198,9 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-        toast.error("Nome do prato é obrigatório");
-        return false;
-      }
+      toast.error("Nome do prato é obrigatório");
+      return false;
+    }
 
     const price = parseFloat(formData.price);
     if (isNaN(price) || price <= 0) {
@@ -141,8 +225,8 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
     if (formData.fat && (isNaN(parseFloat(formData.fat)) || parseFloat(formData.fat) < 0)) {
       toast.error("Gordura deve ser um número válido");
-        return false;
-      }
+      return false;
+    }
 
     return true;
   };
@@ -164,7 +248,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
         carbs: formData.carbs ? parseFloat(formData.carbs) : null,
         fat: formData.fat ? parseFloat(formData.fat) : null,
         tags: parseTags(formData.tags),
-        diet_tags: parseTags(formData.diet_tags),
+        diet_tags: formData.diet_tags,
         is_available: formData.is_available
       };
 
@@ -254,7 +338,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
       carbs: dish.carbs?.toString() || "",
       fat: dish.fat?.toString() || "",
       tags: dish.tags.join(", "),
-      diet_tags: dish.diet_tags.join(", "),
+      diet_tags: dish.diet_tags,
       is_available: dish.is_available
     });
     setShowDialog(true);
@@ -265,6 +349,7 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
     setEditingDish(null);
     setFormData(initialFormData);
     setSaving(false);
+    setUploading(false);
   };
 
   if (loading) {
@@ -327,11 +412,18 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
                 {dish.diet_tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {dish.diet_tags.map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {dish.diet_tags.map(tag => {
+                      const tagOption = dietTagOptions.find(opt => opt.value === tag);
+                      return (
+                        <Badge 
+                          key={tag} 
+                          variant="secondary" 
+                          className={`text-xs ${tagOption?.color || 'bg-gray-100 text-gray-800'}`}
+                        >
+                          {tagOption?.label || tag}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -379,8 +471,8 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
           <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
-              {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
-            </h3>
+                {editingDish ? "Editar Prato" : "Adicionar Novo Prato"}
+              </h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -406,16 +498,20 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
 
                 <div className="space-y-2">
                   <Label htmlFor="price">Preço *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', e.target.value)}
-                    placeholder="0.00"
-                    required
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      R$
+                    </span>
+                    <Input
+                      id="price"
+                      type="text"
+                      value={formData.price}
+                      onChange={(e) => handlePriceChange(e.target.value)}
+                      placeholder="0,00"
+                      className="pl-8"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -441,14 +537,37 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image_url">URL da Imagem</Label>
-                <Input
-                  id="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => handleInputChange('image_url', e.target.value)}
-                  placeholder="https://exemplo.com/imagem.jpg"
-                />
+                <Label>Imagem do Prato</Label>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex-1"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? "Enviando..." : "Selecionar Imagem"}
+                  </Button>
+                </div>
+                {formData.image_url && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.image_url}
+                      alt="Preview da imagem"
+                      className="w-20 h-20 object-cover rounded-lg border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -516,13 +635,24 @@ const DishManager = ({ restaurant }: DishManagerProps) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="diet_tags">Tags Dietéticas (separadas por vírgula)</Label>
-                  <Input
-                    id="diet_tags"
-                    value={formData.diet_tags}
-                    onChange={(e) => handleInputChange('diet_tags', e.target.value)}
-                    placeholder="Ex: vegetariano, sem glúten, low-carb"
-                  />
+                  <Label>Tags Dietéticas</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {dietTagOptions.map((tag) => (
+                      <div key={tag.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={tag.value}
+                          checked={formData.diet_tags.includes(tag.value)}
+                          onCheckedChange={() => toggleDietTag(tag.value)}
+                        />
+                        <Label 
+                          htmlFor={tag.value} 
+                          className={`text-sm cursor-pointer ${tag.color}`}
+                        >
+                          {tag.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
