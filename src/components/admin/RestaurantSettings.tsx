@@ -22,6 +22,8 @@ interface Restaurant {
   header_style?: string;
   background_color?: string;
   background_image_url?: string;
+  card_background_color?: string;
+  card_size?: string;
 }
 
 interface RestaurantSettingsProps {
@@ -37,7 +39,9 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
     font_family: restaurant.font_family || "Inter",
     header_style: restaurant.header_style || "logo-name",
     background_color: restaurant.background_color || "",
-    background_image_url: restaurant.background_image_url || ""
+    background_image_url: restaurant.background_image_url || "",
+    card_background_color: restaurant.card_background_color || "#ffffff",
+    card_size: restaurant.card_size || "medium"
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -458,7 +462,7 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Deixe vazio para usar o fundo padrão
+                      <strong>Importante:</strong> Esta cor/imagem ocupará TODO o fundo do menu
                     </p>
                   </div>
 
@@ -504,7 +508,7 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Recomendado: imagem de 1920x1080px ou similar
+                      Recomendado: imagem de 1920x1080px ou similar. <strong>Ocupará todo o fundo.</strong>
                     </p>
                     
                     {/* Background Image Preview */}
@@ -527,6 +531,77 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Personalization */}
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 text-muted-foreground mt-0.5">🎴</div>
+              <div className="flex-1">
+                <h4 className="font-medium mb-1">Personalização dos Cards</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Personalize a aparência dos cards de comida
+                </p>
+                
+                <div className="space-y-4">
+                  {/* Card Background Color */}
+                  <div>
+                    <Label htmlFor="card_background_color" className="text-sm font-medium">
+                      Cor de Fundo dos Cards
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        id="card_background_color"
+                        type="color"
+                        value={formData.card_background_color || "#ffffff"}
+                        onChange={(e) => setFormData({...formData, card_background_color: e.target.value})}
+                        className="w-16 h-10 p-1 border rounded"
+                      />
+                      <Input
+                        type="text"
+                        placeholder="#ffffff ou nome da cor"
+                        value={formData.card_background_color || "#ffffff"}
+                        onChange={(e) => setFormData({...formData, card_background_color: e.target.value})}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({...formData, card_background_color: "#ffffff"})}
+                      >
+                        Padrão
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cor de fundo dos cards de comida
+                    </p>
+                  </div>
+
+                  {/* Card Size */}
+                  <div>
+                    <Label htmlFor="card_size" className="text-sm font-medium">
+                      Tamanho dos Cards
+                    </Label>
+                    <Select
+                      value={formData.card_size || "medium"}
+                      onValueChange={(value) => setFormData({ ...formData, card_size: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tamanho" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">Pequeno (3 por linha)</SelectItem>
+                        <SelectItem value="medium">Médio (2 por linha)</SelectItem>
+                        <SelectItem value="large">Grande (1 por linha)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tamanho dos cards de comida no menu
+                    </p>
                   </div>
                 </div>
               </div>

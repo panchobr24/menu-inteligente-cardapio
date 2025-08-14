@@ -113,8 +113,14 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          background_color: string | null
+          background_image_url: string | null
+          card_background_color: string | null
+          card_size: string | null
           created_at: string
           description: string | null
+          font_family: string | null
+          header_style: string | null
           id: string
           logo_url: string | null
           name: string
@@ -123,8 +129,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          background_color?: string | null
+          background_image_url?: string | null
+          card_background_color?: string | null
+          card_size?: string | null
           created_at?: string
           description?: string | null
+          font_family?: string | null
+          header_style?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -133,8 +145,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          background_color?: string | null
+          background_image_url?: string | null
+          card_background_color?: string | null
+          card_size?: string | null
           created_at?: string
           description?: string | null
+          font_family?: string | null
+          header_style?: string | null
           id?: string
           logo_url?: string | null
           name?: string

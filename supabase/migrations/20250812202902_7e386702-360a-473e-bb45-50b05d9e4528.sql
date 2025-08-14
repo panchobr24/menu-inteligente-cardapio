@@ -150,7 +150,17 @@ ALTER TABLE restaurants
 ADD COLUMN IF NOT EXISTS background_color TEXT,
 ADD COLUMN IF NOT EXISTS background_image_url TEXT;
 
+-- Add font and header style columns to restaurants table
+ALTER TABLE restaurants 
+ADD COLUMN IF NOT EXISTS font_family TEXT DEFAULT 'Inter',
+ADD COLUMN IF NOT EXISTS header_style TEXT DEFAULT 'logo-name';
+
 -- Update existing restaurants to have default values
 UPDATE restaurants 
 SET background_color = NULL, background_image_url = NULL 
 WHERE background_color IS NULL AND background_image_url IS NULL;
+
+-- Update existing restaurants to have default font and header style values
+UPDATE restaurants 
+SET font_family = 'Inter', header_style = 'logo-name' 
+WHERE font_family IS NULL OR header_style IS NULL;

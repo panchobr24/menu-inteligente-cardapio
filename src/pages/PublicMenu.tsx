@@ -21,7 +21,10 @@ interface Restaurant {
   secondary_color: string;
   background_color?: string;
   background_image_url?: string;
-  header_style: string; // Added header_style to Restaurant interface
+  header_style: string;
+  font_family?: string;
+  card_background_color?: string;
+  card_size?: string;
 }
 
 interface Dish {
@@ -188,6 +191,7 @@ const PublicMenu = () => {
 
   const renderHeader = () => {
     const headerStyle = restaurant?.header_style || 'logo-name';
+    const fontFamily = restaurant?.font_family ? `${restaurant.font_family}, sans-serif` : undefined;
     
     switch (headerStyle) {
       case 'logo-only':
@@ -212,7 +216,10 @@ const PublicMenu = () => {
         return (
           <h1 
             className="text-5xl font-bold mb-4"
-            style={{ color: restaurant.primary_color || '#1f2937' }}
+            style={{ 
+              color: restaurant.primary_color || '#1f2937',
+              fontFamily: fontFamily
+            }}
           >
             {restaurant.name}
           </h1>
@@ -305,7 +312,10 @@ const PublicMenu = () => {
         return (
           <h1 
             className="text-5xl font-bold mb-4"
-            style={{ color: restaurant.primary_color || '#1f2937' }}
+            style={{ 
+              color: restaurant.primary_color || '#1f2937',
+              fontFamily: fontFamily
+            }}
           >
             {restaurant.name}
           </h1>
@@ -363,7 +373,7 @@ const PublicMenu = () => {
       )}
       
       {/* Enhanced Header with Better Logo Placement */}
-      <div className="bg-white border-b shadow-sm relative z-10">
+      <div className="bg-white/95 backdrop-blur-sm border-b shadow-sm relative z-10">
         <div className="max-w-6xl mx-auto">
           {/* Restaurant Info Section - Enhanced */}
           <div className="p-8">
@@ -372,7 +382,12 @@ const PublicMenu = () => {
               {renderHeader()}
               
               {restaurant.description && (
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                <p 
+                  className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
+                  style={{ 
+                    fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined 
+                  }}
+                >
                   {restaurant.description}
                 </p>
               )}
@@ -474,12 +489,20 @@ const PublicMenu = () => {
             </div>
             
             {/* Dishes Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className={`grid gap-8 ${
+              restaurant.card_size === 'small' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+                : restaurant.card_size === 'large' 
+                ? 'grid-cols-1' 
+                : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+            }`}>
               {filteredDishes.map((dish) => (
                 <DishCard
                   key={dish.id}
                   dish={dish}
                   onViewDetails={(dish) => setSelectedDish(dish)}
+                  cardBackgroundColor={restaurant.card_background_color}
+                  cardSize={restaurant.card_size}
                 />
               ))}
             </div>

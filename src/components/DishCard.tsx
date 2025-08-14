@@ -23,9 +23,11 @@ interface Dish {
 interface DishCardProps {
   dish: Dish;
   onViewDetails: (dish: Dish) => void;
+  cardBackgroundColor?: string;
+  cardSize?: string;
 }
 
-const DishCard = ({ dish, onViewDetails }: DishCardProps) => {
+const DishCard = ({ dish, onViewDetails, cardBackgroundColor = "#ffffff", cardSize = "medium" }: DishCardProps) => {
   const getDietTagDisplay = (tag: string) => {
     const tagMap: { [key: string]: { label: string; color: string } } = {
       'vegano': { label: 'Vegano', color: 'bg-green-100 text-green-800 border-green-200' },
@@ -39,8 +41,24 @@ const DishCard = ({ dish, onViewDetails }: DishCardProps) => {
     return tagMap[tag] || { label: tag, color: 'bg-gray-100 text-gray-800 border-gray-200' };
   };
 
+  // Define card size classes
+  const getCardSizeClasses = () => {
+    switch (cardSize) {
+      case 'small':
+        return 'max-w-sm';
+      case 'large':
+        return 'max-w-2xl w-full';
+      default: // medium
+        return 'max-w-md';
+    }
+  };
+
   return (
-    <Card className="dish-card overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 hover:border-primary/30 bg-white/95 backdrop-blur-sm shadow-lg" onClick={() => onViewDetails(dish)}>
+    <Card 
+      className={`dish-card overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 hover:border-primary/30 backdrop-blur-sm shadow-lg ${getCardSizeClasses()}`} 
+      style={{ backgroundColor: cardBackgroundColor }}
+      onClick={() => onViewDetails(dish)}
+    >
       {/* Image Section - Enhanced */}
       <div className="relative h-52 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
         {dish.image_url ? (
