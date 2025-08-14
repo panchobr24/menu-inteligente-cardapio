@@ -144,3 +144,13 @@ BEGIN
     );
   END IF;
 END $$;
+
+-- Add background customization columns to restaurants table
+ALTER TABLE restaurants 
+ADD COLUMN IF NOT EXISTS background_color TEXT,
+ADD COLUMN IF NOT EXISTS background_image_url TEXT;
+
+-- Update existing restaurants to have default values
+UPDATE restaurants 
+SET background_color = NULL, background_image_url = NULL 
+WHERE background_color IS NULL AND background_image_url IS NULL;

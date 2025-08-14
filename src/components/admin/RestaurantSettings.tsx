@@ -35,7 +35,7 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
     description: restaurant.description || "",
     logo_url: restaurant.logo_url || "",
     font_family: restaurant.font_family || "Inter",
-    header_style: restaurant.header_style || "modern",
+    header_style: restaurant.header_style || "logo-name",
     background_color: restaurant.background_color || "",
     background_image_url: restaurant.background_image_url || ""
   });
@@ -57,10 +57,12 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
   ];
 
   const headerStyleOptions = [
-    { value: "modern", label: "Moderno (Logo centralizada)" },
-    { value: "classic", label: "Clássico (Logo à esquerda)" },
-    { value: "banner", label: "Banner (Logo em destaque)" },
-    { value: "minimal", label: "Minimalista (Apenas texto)" }
+    { value: "logo-only", label: "Apenas Logo (Logo centralizada)" },
+    { value: "name-only", label: "Apenas Nome (Nome em destaque)" },
+    { value: "logo-name", label: "Logo + Nome (Logo acima do nome)" },
+    { value: "name-logo", label: "Nome + Logo (Nome acima da logo)" },
+    { value: "side-by-side", label: "Lado a Lado (Logo e nome na horizontal)" },
+    { value: "banner", label: "Banner (Logo e nome em destaque)" }
   ];
 
   const handleSave = async () => {
@@ -327,32 +329,89 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
             <div className="mt-2 p-3 bg-muted/50 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2">Preview do estilo selecionado:</p>
               <div className="border rounded-lg p-3 bg-background">
-                {formData.header_style === 'modern' && (
+                {formData.header_style === 'logo-only' && (
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-primary rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold">
-                      {formData.name?.charAt(0) || 'R'}
+                    <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-xl">
+                      {formData.logo_url ? '🖼️' : 'R'}
                     </div>
-                    <h3 className="font-bold text-lg">{formData.name || "Nome do Restaurante"}</h3>
+                    <p className="text-xs text-muted-foreground">Logo centralizada</p>
                   </div>
                 )}
-                {formData.header_style === 'classic' && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
-                      {formData.name?.charAt(0) || 'R'}
+                {formData.header_style === 'name-only' && (
+                  <div className="text-center">
+                    <div 
+                      className="text-2xl font-bold text-foreground"
+                      style={{ 
+                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                      }}
+                    >
+                      {formData.name || "Nome do Restaurante"}
                     </div>
-                    <h3 className="font-bold text-lg">{formData.name || "Nome do Restaurante"}</h3>
+                    <p className="text-xs text-muted-foreground">Apenas o nome</p>
+                  </div>
+                )}
+                {formData.header_style === 'logo-name' && (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-xl">
+                      {formData.logo_url ? '🖼️' : 'R'}
+                    </div>
+                    <div 
+                      className="text-xl font-bold text-foreground"
+                      style={{ 
+                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                      }}
+                    >
+                      {formData.name || "Nome do Restaurante"}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Logo acima do nome</p>
+                  </div>
+                )}
+                {formData.header_style === 'name-logo' && (
+                  <div className="text-center">
+                    <div 
+                      className="text-xl font-bold text-foreground mb-2"
+                      style={{ 
+                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                      }}
+                    >
+                      {formData.name || "Nome do Restaurante"}
+                    </div>
+                    <div className="w-16 h-16 bg-primary rounded-full mx-auto flex items-center justify-center text-white font-bold text-xl">
+                      {formData.logo_url ? '🖼️' : 'R'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Nome acima da logo</p>
+                  </div>
+                )}
+                {formData.header_style === 'side-by-side' && (
+                  <div className="flex items-center gap-3 justify-center">
+                    <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                      {formData.logo_url ? '🖼️' : 'R'}
+                    </div>
+                    <div 
+                      className="text-xl font-bold text-foreground"
+                      style={{ 
+                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                      }}
+                    >
+                      {formData.name || "Nome do Restaurante"}
+                    </div>
+                    <p className="text-xs text-muted-foreground absolute -bottom-6 left-1/2 transform -translate-x-1/2">Lado a lado</p>
                   </div>
                 )}
                 {formData.header_style === 'banner' && (
                   <div className="bg-primary text-white p-3 rounded-lg text-center">
-                    <h3 className="font-bold text-lg">{formData.name || "Nome do Restaurante"}</h3>
-                  </div>
-                )}
-                {formData.header_style === 'minimal' && (
-                  <div className="text-center">
-                    <h3 className="font-bold text-lg border-b-2 border-primary pb-1">
+                    <div className="w-12 h-12 bg-white/20 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold">
+                      {formData.logo_url ? '🖼️' : 'R'}
+                    </div>
+                    <div 
+                      className="text-lg font-bold"
+                      style={{ 
+                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                      }}
+                    >
                       {formData.name || "Nome do Restaurante"}
-                    </h3>
+                    </div>
+                    <p className="text-xs text-white/80 mt-1">Banner destacado</p>
                   </div>
                 )}
               </div>
@@ -483,10 +542,29 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                   Veja como ficará o cabeçalho do seu cardápio
                 </p>
                 <div className="border rounded-lg p-4 bg-background">
-                  {formData.header_style === 'modern' && (
+                  {formData.header_style === 'logo-only' && (
                     <div className="text-center">
                       <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
-                        {formData.name?.charAt(0) || 'R'}
+                        {formData.logo_url ? '🖼️' : 'R'}
+                      </div>
+                    </div>
+                  )}
+                  {formData.header_style === 'name-only' && (
+                    <div className="text-center">
+                      <div 
+                        className="text-2xl font-bold text-foreground"
+                        style={{ 
+                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                        }}
+                      >
+                        {formData.name || "Nome do Restaurante"}
+                      </div>
+                    </div>
+                  )}
+                  {formData.header_style === 'logo-name' && (
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
+                        {formData.logo_url ? '🖼️' : 'R'}
                       </div>
                       <div 
                         className="text-2xl font-bold text-foreground"
@@ -498,10 +576,25 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                       </div>
                     </div>
                   )}
-                  {formData.header_style === 'classic' && (
-                    <div className="flex items-center gap-4">
+                  {formData.header_style === 'name-logo' && (
+                    <div className="text-center">
+                      <div 
+                        className="text-2xl font-bold text-foreground mb-3"
+                        style={{ 
+                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
+                        }}
+                      >
+                        {formData.name || "Nome do Restaurante"}
+                      </div>
+                      <div className="w-16 h-16 bg-primary rounded-full mx-auto flex items-center justify-center text-white font-bold text-xl">
+                        {formData.logo_url ? '🖼️' : 'R'}
+                      </div>
+                    </div>
+                  )}
+                  {formData.header_style === 'side-by-side' && (
+                    <div className="flex items-center gap-4 justify-center">
                       <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                        {formData.name?.charAt(0) || 'R'}
+                        {formData.logo_url ? '🖼️' : 'R'}
                       </div>
                       <div 
                         className="text-2xl font-bold text-foreground"
@@ -515,20 +608,11 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                   )}
                   {formData.header_style === 'banner' && (
                     <div className="bg-primary text-white p-4 rounded-lg text-center">
+                      <div className="w-16 h-16 bg-white/20 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
+                        {formData.logo_url ? '🖼️' : 'R'}
+                      </div>
                       <div 
                         className="text-2xl font-bold"
-                        style={{ 
-                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                        }}
-                      >
-                        {formData.name || "Nome do Restaurante"}
-                      </div>
-                    </div>
-                  )}
-                  {formData.header_style === 'minimal' && (
-                    <div className="text-center">
-                      <div 
-                        className="text-2xl font-bold border-b-2 border-primary pb-2"
                         style={{ 
                           fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
                         }}

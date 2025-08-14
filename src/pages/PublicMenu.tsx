@@ -21,6 +21,7 @@ interface Restaurant {
   secondary_color: string;
   background_color?: string;
   background_image_url?: string;
+  header_style: string; // Added header_style to Restaurant interface
 }
 
 interface Dish {
@@ -185,6 +186,133 @@ const PublicMenu = () => {
     return [...new Set(values)];
   };
 
+  const renderHeader = () => {
+    const headerStyle = restaurant?.header_style || 'logo-name';
+    
+    switch (headerStyle) {
+      case 'logo-only':
+        return restaurant.logo_url ? (
+          <div className="text-center">
+            <img
+              src={restaurant.logo_url}
+              alt={`${restaurant.name} logo`}
+              className="h-32 w-auto object-contain drop-shadow-2xl mx-auto mb-4"
+            />
+          </div>
+        ) : (
+          <h1 
+            className="text-5xl font-bold mb-4"
+            style={{ color: restaurant.primary_color || '#1f2937' }}
+          >
+            {restaurant.name}
+          </h1>
+        );
+        
+      case 'name-only':
+        return (
+          <h1 
+            className="text-5xl font-bold mb-4"
+            style={{ color: restaurant.primary_color || '#1f2937' }}
+          >
+            {restaurant.name}
+          </h1>
+        );
+        
+      case 'logo-name':
+        return (
+          <div className="text-center">
+            {restaurant.logo_url && (
+              <img
+                src={restaurant.logo_url}
+                alt={`${restaurant.name} logo`}
+                className="h-24 w-auto object-contain drop-shadow-2xl mx-auto mb-4"
+              />
+            )}
+            <h1 
+              className="text-5xl font-bold mb-4"
+              style={{ color: restaurant.primary_color || '#1f2937' }}
+            >
+              {restaurant.name}
+            </h1>
+          </div>
+        );
+        
+      case 'name-logo':
+        return (
+          <div className="text-center">
+            <h1 
+              className="text-5xl font-bold mb-4"
+              style={{ color: restaurant.primary_color || '#1f2937' }}
+            >
+              {restaurant.name}
+            </h1>
+            {restaurant.logo_url && (
+              <img
+                src={restaurant.logo_url}
+                alt={`${restaurant.name} logo`}
+                className="h-24 w-auto object-contain drop-shadow-2xl mx-auto"
+              />
+            )}
+          </div>
+        );
+        
+      case 'side-by-side':
+        return (
+          <div className="flex items-center justify-center gap-6 mb-4">
+            {restaurant.logo_url && (
+              <img
+                src={restaurant.logo_url}
+                alt={`${restaurant.name} logo`}
+                className="h-20 w-auto object-contain drop-shadow-2xl"
+              />
+            )}
+            <h1 
+              className="text-5xl font-bold"
+              style={{ color: restaurant.primary_color || '#1f2937' }}
+            >
+              {restaurant.name}
+            </h1>
+          </div>
+        );
+        
+      case 'banner':
+        return (
+          <div 
+            className="bg-gradient-to-r from-primary/20 to-secondary/20 p-6 rounded-2xl border border-primary/30"
+            style={{
+              background: `linear-gradient(135deg, ${restaurant.primary_color || '#3b82f6'}20 0%, ${restaurant.secondary_color || '#8b5cf6'}20 100%)`
+            }}
+          >
+            <div className="text-center">
+              {restaurant.logo_url && (
+                <img
+                  src={restaurant.logo_url}
+                  alt={`${restaurant.name} logo`}
+                  className="h-20 w-auto object-contain drop-shadow-2xl mx-auto mb-3"
+                />
+              )}
+              <h1 
+                className="text-4xl font-bold"
+                style={{ color: restaurant.primary_color || '#1f2937' }}
+              >
+                {restaurant.name}
+              </h1>
+            </div>
+          </div>
+        );
+        
+      default:
+        return (
+          <h1 
+            className="text-5xl font-bold mb-4"
+            style={{ color: restaurant.primary_color || '#1f2937' }}
+          >
+            {restaurant.name}
+          </h1>
+        );
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -237,55 +365,12 @@ const PublicMenu = () => {
       {/* Enhanced Header with Better Logo Placement */}
       <div className="bg-white border-b shadow-sm relative z-10">
         <div className="max-w-6xl mx-auto">
-          {/* Logo Banner Section - Enhanced */}
-          {restaurant.logo_url && (
-            <div 
-              className="relative h-40 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden border-b"
-              style={{
-                background: `linear-gradient(135deg, ${restaurant.primary_color || '#3b82f6'}08 0%, ${restaurant.secondary_color || '#8b5cf6'}08 100%)`
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="mb-4">
-                    <img
-                      src={restaurant.logo_url}
-                      alt={`${restaurant.name} logo`}
-                      className="h-28 w-auto object-contain drop-shadow-2xl transition-transform hover:scale-105"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  {/* Decorative elements */}
-                  <div className="flex justify-center space-x-2">
-                    <div 
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: restaurant.primary_color || '#3b82f6' }}
-                    />
-                    <div 
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: restaurant.secondary_color || '#8b5cf6' }}
-                    />
-                    <div 
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: restaurant.primary_color || '#3b82f6' }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
           {/* Restaurant Info Section - Enhanced */}
           <div className="p-8">
             <div className="text-center mb-8">
-              <h1 
-                className="text-5xl font-bold mb-4"
-                style={{ color: restaurant.primary_color || '#1f2937' }}
-              >
-                {restaurant.name}
-              </h1>
+              {/* Dynamic Header based on header_style */}
+              {renderHeader()}
+              
               {restaurant.description && (
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {restaurant.description}
