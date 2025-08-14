@@ -221,54 +221,94 @@ const PublicMenu = () => {
       {/* Enhanced Header with Better Logo Placement */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-6xl mx-auto">
-          {/* Logo Banner Section */}
+          {/* Logo Banner Section - Enhanced */}
           {restaurant.logo_url && (
-            <div className="relative h-32 bg-gradient-to-r from-primary/10 to-secondary/10 overflow-hidden">
+            <div 
+              className="relative h-40 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden border-b"
+              style={{
+                background: `linear-gradient(135deg, ${restaurant.primary_color || '#3b82f6'}08 0%, ${restaurant.secondary_color || '#8b5cf6'}08 100%)`
+              }}
+            >
               <div className="absolute inset-0 flex items-center justify-center">
-                <img
-                  src={restaurant.logo_url}
-                  alt={`${restaurant.name} logo`}
-                  className="h-24 w-auto object-contain drop-shadow-lg"
-                />
+                <div className="text-center">
+                  <div className="mb-4">
+                    <img
+                      src={restaurant.logo_url}
+                      alt={`${restaurant.name} logo`}
+                      className="h-28 w-auto object-contain drop-shadow-2xl transition-transform hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  {/* Decorative elements */}
+                  <div className="flex justify-center space-x-2">
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: restaurant.primary_color || '#3b82f6' }}
+                    />
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: restaurant.secondary_color || '#8b5cf6' }}
+                    />
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: restaurant.primary_color || '#3b82f6' }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
           
-          {/* Restaurant Info Section */}
-          <div className="p-6">
-            <div className="text-center mb-6">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{restaurant.name}</h1>
+          {/* Restaurant Info Section - Enhanced */}
+          <div className="p-8">
+            <div className="text-center mb-8">
+              <h1 
+                className="text-5xl font-bold mb-4"
+                style={{ color: restaurant.primary_color || '#1f2937' }}
+              >
+                {restaurant.name}
+              </h1>
               {restaurant.description && (
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {restaurant.description}
                 </p>
               )}
+              {/* Decorative line */}
+              <div 
+                className="w-24 h-1 mx-auto mt-6 rounded-full"
+                style={{ backgroundColor: restaurant.secondary_color || '#8b5cf6' }}
+              />
             </div>
 
-            {/* Search and Filter Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
+            {/* Search and Filter Controls - Enhanced */}
+            <div className="flex flex-col sm:flex-row gap-4 max-w-3xl mx-auto">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
                 <Input
                   placeholder="Buscar pratos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-12 h-12 text-lg border-2 focus:border-primary transition-colors"
                 />
               </div>
               <Button
-                variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-12 px-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                style={{ 
+                  backgroundColor: restaurant.primary_color || '#3b82f6',
+                  borderColor: restaurant.primary_color || '#3b82f6'
+                }}
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-5 h-5" />
                 Filtrar
               </Button>
             </div>
 
             {/* Modern Filter Panel */}
             {showFilters && (
-              <div className="mt-6 max-w-4xl mx-auto">
+              <div className="mt-8 max-w-4xl mx-auto">
                 <ModernFilterPanel
                   availableDietTags={getUniqueValues('diet_tags')}
                   availableTags={getUniqueValues('tags')}
@@ -290,35 +330,59 @@ const PublicMenu = () => {
         </div>
       </div>
 
-      {/* Menu Content */}
-      <div className="max-w-6xl mx-auto p-6">
+      {/* Menu Content - Enhanced */}
+      <div className="max-w-6xl mx-auto p-8">
         {filteredDishes.length === 0 ? (
-          <Card className="text-center py-12">
+          <Card className="text-center py-16 border-2 border-dashed">
             <CardContent>
-              <h3 className="text-lg font-semibold mb-2">Nenhum prato encontrado</h3>
-              <p className="text-muted-foreground mb-4">
+              <div 
+                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: (restaurant.primary_color || '#3b82f6') + '20' }}
+              >
+                <Search className="w-8 h-8" style={{ color: restaurant.primary_color || '#3b82f6' }} />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Nenhum prato encontrado</h3>
+              <p className="text-muted-foreground mb-6 text-lg">
                 {dishes.length === 0 
                   ? "Este restaurante ainda não possui pratos cadastrados."
                   : "Tente ajustar os filtros para ver mais opções."
                 }
               </p>
               {dishes.length > 0 && (
-                <Button onClick={clearFilters} variant="outline">
+                <Button 
+                  onClick={clearFilters} 
+                  variant="outline"
+                  className="px-6 py-3 text-lg"
+                  style={{ 
+                    borderColor: restaurant.primary_color || '#3b82f6',
+                    color: restaurant.primary_color || '#3b82f6'
+                  }}
+                >
                   Limpar Filtros
                 </Button>
               )}
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredDishes.map((dish) => (
-              <DishCard
-                key={dish.id}
-                dish={dish}
-                onViewDetails={(dish) => setSelectedDish(dish)}
-              />
-            ))}
-          </div>
+          <>
+            {/* Results count */}
+            <div className="mb-6 text-center">
+              <p className="text-lg text-muted-foreground">
+                {filteredDishes.length} prato{filteredDishes.length !== 1 ? 's' : ''} encontrado{filteredDishes.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            
+            {/* Dishes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredDishes.map((dish) => (
+                <DishCard
+                  key={dish.id}
+                  dish={dish}
+                  onViewDetails={(dish) => setSelectedDish(dish)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

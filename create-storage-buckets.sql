@@ -14,8 +14,19 @@ ON CONFLICT (id) DO NOTHING;
 -- 3. Verificar se os buckets foram criados
 SELECT id, name, public FROM storage.buckets WHERE id IN ('restaurant-logos', 'dish-images');
 
--- 4. Criar políticas RLS para o bucket restaurant-logos
-CREATE POLICY IF NOT EXISTS "Restaurant owners can upload logos" ON storage.objects
+-- 4. Remover políticas existentes (se houver) para evitar conflitos
+DROP POLICY IF EXISTS "Restaurant owners can upload logos" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view restaurant logos" ON storage.objects;
+DROP POLICY IF EXISTS "Restaurant owners can update their logos" ON storage.objects;
+DROP POLICY IF EXISTS "Restaurant owners can delete their logos" ON storage.objects;
+
+DROP POLICY IF EXISTS "Restaurant owners can upload dish images" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view dish images" ON storage.objects;
+DROP POLICY IF EXISTS "Restaurant owners can update their dish images" ON storage.objects;
+DROP POLICY IF EXISTS "Restaurant owners can delete their dish images" ON storage.objects;
+
+-- 5. Criar políticas RLS para o bucket restaurant-logos
+CREATE POLICY "Restaurant owners can upload logos" ON storage.objects
 FOR INSERT WITH CHECK (
   bucket_id = 'restaurant-logos' AND
   EXISTS (
@@ -24,10 +35,10 @@ FOR INSERT WITH CHECK (
   )
 );
 
-CREATE POLICY IF NOT EXISTS "Anyone can view restaurant logos" ON storage.objects
+CREATE POLICY "Anyone can view restaurant logos" ON storage.objects
 FOR SELECT USING (bucket_id = 'restaurant-logos');
 
-CREATE POLICY IF NOT EXISTS "Restaurant owners can update their logos" ON storage.objects
+CREATE POLICY "Restaurant owners can update their logos" ON storage.objects
 FOR UPDATE USING (
   bucket_id = 'restaurant-logos' AND
   EXISTS (
@@ -36,7 +47,7 @@ FOR UPDATE USING (
   )
 );
 
-CREATE POLICY IF NOT EXISTS "Restaurant owners can delete their logos" ON storage.objects
+CREATE POLICY "Restaurant owners can delete their logos" ON storage.objects
 FOR DELETE USING (
   bucket_id = 'restaurant-logos' AND
   EXISTS (
@@ -45,8 +56,8 @@ FOR DELETE USING (
   )
 );
 
--- 5. Criar políticas RLS para o bucket dish-images
-CREATE POLICY IF NOT EXISTS "Restaurant owners can upload dish images" ON storage.objects
+-- 6. Criar políticas RLS para o bucket dish-images
+CREATE POLICY "Restaurant owners can upload dish images" ON storage.objects
 FOR INSERT WITH CHECK (
   bucket_id = 'dish-images' AND
   EXISTS (
@@ -55,10 +66,10 @@ FOR INSERT WITH CHECK (
   )
 );
 
-CREATE POLICY IF NOT EXISTS "Anyone can view dish images" ON storage.objects
+CREATE POLICY "Anyone can view dish images" ON storage.objects
 FOR SELECT USING (bucket_id = 'dish-images');
 
-CREATE POLICY IF NOT EXISTS "Restaurant owners can update their dish images" ON storage.objects
+CREATE POLICY "Restaurant owners can update their dish images" ON storage.objects
 FOR UPDATE USING (
   bucket_id = 'dish-images' AND
   EXISTS (
@@ -67,7 +78,7 @@ FOR UPDATE USING (
   )
 );
 
-CREATE POLICY IF NOT EXISTS "Restaurant owners can delete their dish images" ON storage.objects
+CREATE POLICY "Restaurant owners can delete their dish images" ON storage.objects
 FOR DELETE USING (
   bucket_id = 'dish-images' AND
   EXISTS (
@@ -76,7 +87,7 @@ FOR DELETE USING (
   )
 );
 
--- 6. Verificar as políticas criadas
+-- 7. Verificar as políticas criadas
 SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
 FROM pg_policies 
 WHERE tablename = 'objects' 
