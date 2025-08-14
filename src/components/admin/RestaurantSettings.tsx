@@ -608,6 +608,100 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
             </div>
           </div>
 
+          {/* Color Customization */}
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="flex items-start gap-3">
+              <Palette className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium mb-1">Personalização de Cores</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Customize as cores do seu menu para refletir a identidade visual do seu restaurante
+                </p>
+                
+                <div className="space-y-4">
+                  {/* Color Inputs */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="primary_color">Cor Primária</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="primary_color"
+                          type="color"
+                          value={formData.primary_color || "#3b82f6"}
+                          onChange={(e) => setFormData({...formData, primary_color: e.target.value})}
+                          className="w-16 h-12 p-1 border-2"
+                        />
+                        <Input
+                          value={formData.primary_color || "#3b82f6"}
+                          onChange={(e) => setFormData({...formData, primary_color: e.target.value})}
+                          placeholder="#3b82f6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="secondary_color">Cor Secundária</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="secondary_color"
+                          type="color"
+                          value={formData.secondary_color || "#8b5cf6"}
+                          onChange={(e) => setFormData({...formData, secondary_color: e.target.value})}
+                          className="w-16 h-12 p-1 border-2"
+                        />
+                        <Input
+                          value={formData.secondary_color || "#8b5cf6"}
+                          onChange={(e) => setFormData({...formData, secondary_color: e.target.value})}
+                          placeholder="#8b5cf6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preset Themes */}
+                  <div className="space-y-4">
+                    <Label>Temas Predefinidos</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {[
+                        { name: "Verde Natureza", primary: "#16a34a", secondary: "#f97316" },
+                        { name: "Azul Oceano", primary: "#0ea5e9", secondary: "#8b5cf6" },
+                        { name: "Vermelho Elegante", primary: "#dc2626", secondary: "#fbbf24" },
+                        { name: "Roxo Moderno", primary: "#7c3aed", secondary: "#06b6d4" },
+                        { name: "Rosa Delicado", primary: "#ec4899", secondary: "#10b981" },
+                        { name: "Laranja Vibrante", primary: "#ea580c", secondary: "#3b82f6" }
+                      ].map((theme) => (
+                        <button
+                          key={theme.name}
+                          type="button"
+                          onClick={() => setFormData({
+                            ...formData, 
+                            primary_color: theme.primary, 
+                            secondary_color: theme.secondary
+                          })}
+                          className="p-3 rounded-lg border-2 hover:border-primary/50 transition-all text-left"
+                        >
+                          <div className="flex gap-2 mb-2">
+                            <div 
+                              className="w-6 h-6 rounded"
+                              style={{ backgroundColor: theme.primary }}
+                            />
+                            <div 
+                              className="w-6 h-6 rounded"
+                              style={{ backgroundColor: theme.secondary }}
+                            />
+                          </div>
+                          <p className="text-sm font-medium">{theme.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="p-4 bg-muted rounded-lg">
             <div className="flex items-start gap-3">
               <Type className="w-5 h-5 text-muted-foreground mt-0.5" />

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { LogOut, Settings, Menu, Palette, Plus, ArrowLeft } from "lucide-react";
 import RestaurantSettings from "@/components/admin/RestaurantSettings";
 import DishManager from "@/components/admin/DishManager";
-import ColorCustomizer from "@/components/admin/ColorCustomizer";
+
 
 interface AdminDashboardProps {
   user: User | null;
@@ -171,7 +171,7 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="dishes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 bg-white shadow-sm">
             <TabsTrigger value="dishes" className="flex items-center gap-2">
               <Menu className="w-4 h-4" />
               Gerenciar Pratos
@@ -179,10 +179,6 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
             <TabsTrigger value="restaurant" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configurações
-            </TabsTrigger>
-            <TabsTrigger value="design" className="flex items-center gap-2">
-              <Palette className="w-4 h-4" />
-              Personalização
             </TabsTrigger>
           </TabsList>
 
@@ -192,10 +188,6 @@ const AdminDashboard = ({ user }: AdminDashboardProps) => {
 
           <TabsContent value="restaurant">
             <RestaurantSettings restaurant={restaurant} onUpdate={setRestaurant} />
-          </TabsContent>
-
-          <TabsContent value="design">
-            <ColorCustomizer restaurant={restaurant} onUpdate={setRestaurant} />
           </TabsContent>
         </Tabs>
       </div>

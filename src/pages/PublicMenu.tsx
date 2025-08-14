@@ -356,25 +356,38 @@ const PublicMenu = () => {
     );
   }
 
+  // Apply background to body when component mounts
+  useEffect(() => {
+    if (restaurant?.background_color || restaurant?.background_image_url) {
+      document.body.style.backgroundColor = restaurant.background_color || '';
+      document.body.style.backgroundImage = restaurant.background_image_url ? `url(${restaurant.background_image_url})` : '';
+      document.body.style.backgroundSize = restaurant.background_image_url ? 'cover' : '';
+      document.body.style.backgroundPosition = restaurant.background_image_url ? 'center' : '';
+      document.body.style.backgroundAttachment = restaurant.background_image_url ? 'fixed' : '';
+      document.body.style.backgroundRepeat = restaurant.background_image_url ? 'no-repeat' : '';
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      document.body.style.backgroundColor = '';
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundPosition = '';
+      document.body.style.backgroundAttachment = '';
+      document.body.style.backgroundRepeat = '';
+    };
+  }, [restaurant?.background_color, restaurant?.background_image_url]);
+
   return (
-    <div 
-      className="min-h-screen"
-      style={{
-        backgroundColor: restaurant.background_color || undefined,
-        backgroundImage: restaurant.background_image_url ? `url(${restaurant.background_image_url})` : undefined,
-        backgroundSize: restaurant.background_image_url ? 'cover' : undefined,
-        backgroundPosition: restaurant.background_image_url ? 'center' : undefined,
-        backgroundAttachment: restaurant.background_image_url ? 'fixed' : undefined,
-      }}
-    >
+    <div className="min-h-screen w-full">
       {/* Background overlay for better readability when using background image */}
       {restaurant.background_image_url && (
-        <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+        <div className="fixed inset-0 bg-black/20 pointer-events-none z-0" />
       )}
       
       {/* Enhanced Header with Better Logo Placement */}
       <div className="bg-white/95 backdrop-blur-sm border-b shadow-sm relative z-10">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Restaurant Info Section - Enhanced */}
           <div className="p-8">
             <div className="text-center mb-8">
@@ -447,7 +460,7 @@ const PublicMenu = () => {
       </div>
 
       {/* Menu Content - Enhanced */}
-      <div className="max-w-6xl mx-auto p-8 relative z-10">
+      <div className="max-w-4xl mx-auto p-8 relative z-10">
         {filteredDishes.length === 0 ? (
           <Card className="text-center py-16 border-2 border-dashed bg-white/95 backdrop-blur-sm">
             <CardContent>
