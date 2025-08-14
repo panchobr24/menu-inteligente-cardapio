@@ -207,7 +207,10 @@ const PublicMenu = () => {
         ) : (
           <h1 
             className="text-5xl font-bold mb-4"
-            style={{ color: restaurant.primary_color || '#1f2937' }}
+            style={{ 
+              color: restaurant.primary_color || '#1f2937',
+              fontFamily: fontFamily
+            }}
           >
             {restaurant.name}
           </h1>
@@ -238,7 +241,10 @@ const PublicMenu = () => {
             )}
             <h1 
               className="text-5xl font-bold mb-4"
-              style={{ color: restaurant.primary_color || '#1f2937' }}
+              style={{ 
+                color: restaurant.primary_color || '#1f2937',
+                fontFamily: fontFamily
+              }}
             >
               {restaurant.name}
             </h1>
@@ -250,7 +256,10 @@ const PublicMenu = () => {
           <div className="text-center">
             <h1 
               className="text-5xl font-bold mb-4"
-              style={{ color: restaurant.primary_color || '#1f2937' }}
+              style={{ 
+                color: restaurant.primary_color || '#1f2937',
+                fontFamily: fontFamily
+              }}
             >
               {restaurant.name}
             </h1>
@@ -276,7 +285,10 @@ const PublicMenu = () => {
             )}
             <h1 
               className="text-5xl font-bold"
-              style={{ color: restaurant.primary_color || '#1f2937' }}
+              style={{ 
+                color: restaurant.primary_color || '#1f2937',
+                fontFamily: fontFamily
+              }}
             >
               {restaurant.name}
             </h1>
@@ -301,7 +313,10 @@ const PublicMenu = () => {
               )}
               <h1 
                 className="text-4xl font-bold"
-                style={{ color: restaurant.primary_color || '#1f2937' }}
+                style={{ 
+                  color: restaurant.primary_color || '#1f2937',
+                  fontFamily: fontFamily
+                }}
               >
                 {restaurant.name}
               </h1>
@@ -321,6 +336,20 @@ const PublicMenu = () => {
             {restaurant.name}
           </h1>
         );
+    }
+  };
+
+  const getCardGridClasses = () => {
+    const cardSize = restaurant?.card_size || 'medium';
+    switch (cardSize) {
+      case 'small':
+        return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'; // 3 por fileira em telas grandes
+      case 'medium':
+        return 'grid-cols-1 lg:grid-cols-2'; // 2 por fileira em telas grandes
+      case 'large':
+        return 'grid-cols-1'; // 1 por fileira
+      default:
+        return 'grid-cols-1 lg:grid-cols-2';
     }
   };
 
@@ -364,6 +393,7 @@ const PublicMenu = () => {
     backgroundPosition: restaurant.background_image_url ? 'center' : undefined,
     backgroundAttachment: restaurant.background_image_url ? 'fixed' : undefined,
     backgroundRepeat: restaurant.background_image_url ? 'no-repeat' : undefined,
+    fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined,
   };
 
   return (
@@ -375,7 +405,7 @@ const PublicMenu = () => {
       
       {/* Enhanced Header with Better Logo Placement */}
       <div className="bg-white/95 backdrop-blur-sm border-b shadow-sm relative z-10">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Restaurant Info Section - Enhanced */}
           <div className="p-8">
             <div className="text-center mb-8">
@@ -408,6 +438,9 @@ const PublicMenu = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-12 h-12 text-lg border-2 focus:border-primary transition-colors"
+                  style={{ 
+                    fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined 
+                  }}
                 />
               </div>
               <Button
@@ -415,7 +448,8 @@ const PublicMenu = () => {
                 className="flex items-center gap-2 h-12 px-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
                 style={{ 
                   backgroundColor: restaurant.primary_color || '#3b82f6',
-                  borderColor: restaurant.primary_color || '#3b82f6'
+                  borderColor: restaurant.primary_color || '#3b82f6',
+                  fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined
                 }}
               >
                 <Filter className="w-5 h-5" />
@@ -448,7 +482,7 @@ const PublicMenu = () => {
       </div>
 
       {/* Menu Content - Enhanced */}
-      <div className="max-w-4xl mx-auto p-8 relative z-10">
+      <div className="max-w-6xl mx-auto p-8 relative z-10">
         {filteredDishes.length === 0 ? (
           <Card className="text-center py-16 border-2 border-dashed bg-white/95 backdrop-blur-sm">
             <CardContent>
@@ -458,8 +492,20 @@ const PublicMenu = () => {
               >
                 <Search className="w-8 h-8" style={{ color: restaurant.primary_color || '#3b82f6' }} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Nenhum prato encontrado</h3>
-              <p className="text-muted-foreground mb-6 text-lg">
+              <h3 
+                className="text-xl font-semibold mb-3"
+                style={{ 
+                  fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined 
+                }}
+              >
+                Nenhum prato encontrado
+              </h3>
+              <p 
+                className="text-muted-foreground mb-6 text-lg"
+                style={{ 
+                  fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined 
+                }}
+              >
                 {dishes.length === 0 
                   ? "Este restaurante ainda não possui pratos cadastrados."
                   : "Tente ajustar os filtros para ver mais opções."
@@ -472,7 +518,8 @@ const PublicMenu = () => {
                   className="px-6 py-3 text-lg"
                   style={{ 
                     borderColor: restaurant.primary_color || '#3b82f6',
-                    color: restaurant.primary_color || '#3b82f6'
+                    color: restaurant.primary_color || '#3b82f6',
+                    fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined
                   }}
                 >
                   Limpar Filtros
@@ -484,19 +531,18 @@ const PublicMenu = () => {
           <>
             {/* Results count */}
             <div className="mb-6 text-center">
-              <p className="text-lg text-muted-foreground bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full inline-block">
+              <p 
+                className="text-lg text-muted-foreground bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full inline-block"
+                style={{ 
+                  fontFamily: restaurant.font_family ? `${restaurant.font_family}, sans-serif` : undefined 
+                }}
+              >
                 {filteredDishes.length} prato{filteredDishes.length !== 1 ? 's' : ''} encontrado{filteredDishes.length !== 1 ? 's' : ''}
               </p>
             </div>
             
-            {/* Dishes Grid */}
-            <div className={`grid gap-8 ${
-              restaurant.card_size === 'small' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                : restaurant.card_size === 'large' 
-                ? 'grid-cols-1' 
-                : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-            }`}>
+            {/* Dishes Grid - Corrigido com classes centralizadas */}
+            <div className={`grid gap-8 justify-items-center ${getCardGridClasses()}`}>
               {filteredDishes.map((dish) => (
                 <DishCard
                   key={dish.id}
@@ -504,6 +550,7 @@ const PublicMenu = () => {
                   onViewDetails={(dish) => setSelectedDish(dish)}
                   cardBackgroundColor={restaurant.card_background_color}
                   cardSize={restaurant.card_size}
+                  fontFamily={restaurant.font_family}
                 />
               ))}
             </div>

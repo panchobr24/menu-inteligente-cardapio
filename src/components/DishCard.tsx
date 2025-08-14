@@ -25,9 +25,10 @@ interface DishCardProps {
   onViewDetails: (dish: Dish) => void;
   cardBackgroundColor?: string;
   cardSize?: string;
+  fontFamily?: string;
 }
 
-const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCardProps) => {
+const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize, fontFamily }: DishCardProps) => {
   const getDietTagDisplay = (tag: string) => {
     const tagMap: { [key: string]: { label: string; color: string } } = {
       'vegano': { label: 'Vegano', color: 'bg-nutrition-100 text-nutrition-800' },
@@ -50,13 +51,24 @@ const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCa
     onViewDetails(dish);
   };
 
-  const cardStyle = cardBackgroundColor ? { backgroundColor: cardBackgroundColor } : {};
+  const cardStyle = {
+    backgroundColor: cardBackgroundColor || undefined,
+    fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined,
+  };
+  
   const isLarge = cardSize === 'large';
   const isSmall = cardSize === 'small';
 
+  // Ajustar largura máxima baseado no tamanho do card
+  const getCardMaxWidth = () => {
+    if (isLarge) return 'max-w-none w-full'; // Ocupa toda a largura disponível
+    if (isSmall) return 'max-w-sm w-full'; // Largura pequena mas consistente
+    return 'max-w-md w-full'; // Largura média
+  };
+
   return (
     <Card 
-      className={`group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 hover:border-primary/30 bg-white/95 backdrop-blur-sm ${
+      className={`group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 hover:border-primary/30 bg-white/95 backdrop-blur-sm ${getCardMaxWidth()} ${
         isLarge ? 'p-6' : isSmall ? 'p-3' : 'p-4'
       }`}
       style={cardStyle}
@@ -82,7 +94,10 @@ const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCa
           
           {/* Price Badge */}
           <div className="absolute top-3 right-3">
-            <div className={`${isSmall ? 'text-sm px-2 py-1' : 'text-lg px-3 py-2'} font-bold text-white bg-black/50 rounded-lg backdrop-blur-sm`}>
+            <div 
+              className={`${isSmall ? 'text-sm px-2 py-1' : 'text-lg px-3 py-2'} font-bold text-white bg-black/50 rounded-lg backdrop-blur-sm`}
+              style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
+            >
               R$ {dish.price.toFixed(2)}
             </div>
           </div>
@@ -91,10 +106,16 @@ const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCa
         {/* Content */}
         <div className={`flex-1 ${isLarge ? '' : 'space-y-3'}`}>
           <CardHeader className="p-0">
-            <CardTitle className={`${isSmall ? 'text-lg' : isLarge ? 'text-2xl' : 'text-xl'} font-bold line-clamp-2 group-hover:text-primary transition-colors`}>
+            <CardTitle 
+              className={`${isSmall ? 'text-lg' : isLarge ? 'text-2xl' : 'text-xl'} font-bold line-clamp-2 group-hover:text-primary transition-colors`}
+              style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
+            >
               {dish.name}
             </CardTitle>
-            <CardDescription className={`${isSmall ? 'text-xs' : 'text-sm'} line-clamp-3 leading-relaxed`}>
+            <CardDescription 
+              className={`${isSmall ? 'text-xs' : 'text-sm'} line-clamp-3 leading-relaxed`}
+              style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
+            >
               {dish.description}
             </CardDescription>
           </CardHeader>
@@ -109,13 +130,18 @@ const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCa
                     <Badge 
                       key={tag} 
                       className={`${tagDisplay.color} border-0 ${isSmall ? 'text-xs px-2 py-1' : 'text-xs'}`}
+                      style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
                     >
                       {tagDisplay.label}
                     </Badge>
                   );
                 })}
                 {dish.diet_tags.length > (isSmall ? 2 : 3) && (
-                  <Badge variant="outline" className={`${isSmall ? 'text-xs px-2 py-1' : 'text-xs'}`}>
+                  <Badge 
+                    variant="outline" 
+                    className={`${isSmall ? 'text-xs px-2 py-1' : 'text-xs'}`}
+                    style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
+                  >
                     +{dish.diet_tags.length - (isSmall ? 2 : 3)}
                   </Badge>
                 )}
@@ -124,7 +150,10 @@ const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCa
 
             {/* Nutritional Info */}
             {!isSmall && (dish.calories || dish.protein || dish.carbs || dish.fat) && (
-              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+              <div 
+                className="grid grid-cols-2 gap-2 text-xs text-muted-foreground"
+                style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
+              >
                 {dish.calories && (
                   <div className="flex items-center gap-1">
                     <Zap className="w-3 h-3 text-primary" />
@@ -155,6 +184,7 @@ const DishCard = ({ dish, onViewDetails, cardBackgroundColor, cardSize }: DishCa
             {/* View Details Button */}
             <Button 
               className={`w-full mt-3 ${isSmall ? 'h-8 text-xs' : 'h-10'} shadow-lg hover:shadow-xl transition-all duration-300`}
+              style={{ fontFamily: fontFamily ? `${fontFamily}, sans-serif` : undefined }}
               onClick={(e) => {
                 e.stopPropagation();
                 onViewDetails(dish);
