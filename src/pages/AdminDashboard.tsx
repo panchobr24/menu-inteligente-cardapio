@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { User } from '@supabase/supabase-js';
 import { useNavigate } from "react-router-dom";
@@ -12,7 +11,6 @@ import { LogOut, Settings, Menu, Palette, Plus, ArrowLeft } from "lucide-react";
 import RestaurantSettings from "@/components/admin/RestaurantSettings";
 import DishManager from "@/components/admin/DishManager";
 
-
 interface AdminDashboardProps {
   user: User | null;
 }
@@ -24,6 +22,12 @@ interface Restaurant {
   logo_url: string;
   primary_color: string;
   secondary_color: string;
+  font_family: string;
+  header_style: string;
+  background_color: string;
+  background_image_url: string;
+  card_background_color: string;
+  card_size: string;
 }
 
 const AdminDashboard = ({ user }: AdminDashboardProps) => {

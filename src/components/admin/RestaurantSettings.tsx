@@ -554,7 +554,7 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
       </form>
 
       {/* QR Code */}
-      <QRCodeGenerator restaurantId={restaurant.id} />
+      <QRCodeGenerator restaurantId={restaurant.id} restaurantName={restaurant.name} />
     </div>
   );
 };
