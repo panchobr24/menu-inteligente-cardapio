@@ -19,6 +19,8 @@ interface Restaurant {
   logo_url: string;
   primary_color: string;
   secondary_color: string;
+  background_color?: string;
+  background_image_url?: string;
 }
 
 interface Dish {
@@ -217,9 +219,23 @@ const PublicMenu = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div 
+      className="min-h-screen"
+      style={{
+        backgroundColor: restaurant.background_color || undefined,
+        backgroundImage: restaurant.background_image_url ? `url(${restaurant.background_image_url})` : undefined,
+        backgroundSize: restaurant.background_image_url ? 'cover' : undefined,
+        backgroundPosition: restaurant.background_image_url ? 'center' : undefined,
+        backgroundAttachment: restaurant.background_image_url ? 'fixed' : undefined,
+      }}
+    >
+      {/* Background overlay for better readability when using background image */}
+      {restaurant.background_image_url && (
+        <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+      )}
+      
       {/* Enhanced Header with Better Logo Placement */}
-      <div className="bg-white border-b shadow-sm">
+      <div className="bg-white border-b shadow-sm relative z-10">
         <div className="max-w-6xl mx-auto">
           {/* Logo Banner Section - Enhanced */}
           {restaurant.logo_url && (
@@ -331,9 +347,9 @@ const PublicMenu = () => {
       </div>
 
       {/* Menu Content - Enhanced */}
-      <div className="max-w-6xl mx-auto p-8">
+      <div className="max-w-6xl mx-auto p-8 relative z-10">
         {filteredDishes.length === 0 ? (
-          <Card className="text-center py-16 border-2 border-dashed">
+          <Card className="text-center py-16 border-2 border-dashed bg-white/95 backdrop-blur-sm">
             <CardContent>
               <div 
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
@@ -367,7 +383,7 @@ const PublicMenu = () => {
           <>
             {/* Results count */}
             <div className="mb-6 text-center">
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-muted-foreground bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full inline-block">
                 {filteredDishes.length} prato{filteredDishes.length !== 1 ? 's' : ''} encontrado{filteredDishes.length !== 1 ? 's' : ''}
               </p>
             </div>

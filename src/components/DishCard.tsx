@@ -40,7 +40,7 @@ const DishCard = ({ dish, onViewDetails }: DishCardProps) => {
   };
 
   return (
-    <Card className="dish-card overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 hover:border-primary/30" onClick={() => onViewDetails(dish)}>
+    <Card className="dish-card overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 hover:border-primary/30 bg-white/95 backdrop-blur-sm shadow-lg" onClick={() => onViewDetails(dish)}>
       {/* Image Section - Enhanced */}
       <div className="relative h-52 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
         {dish.image_url ? (
@@ -77,13 +77,6 @@ const DishCard = ({ dish, onViewDetails }: DishCardProps) => {
           </div>
         </div>
 
-        {/* Price Badge - Enhanced */}
-        <div className="absolute top-3 right-3">
-          <Badge className="bg-white/95 text-foreground font-bold text-sm px-3 py-1 shadow-lg border border-white/50">
-            R$ {dish.price.toFixed(2)}
-          </Badge>
-        </div>
-
         {/* Availability Badge */}
         {!dish.is_available && (
           <div className="absolute top-3 left-3">
@@ -96,9 +89,15 @@ const DishCard = ({ dish, onViewDetails }: DishCardProps) => {
 
       {/* Content Section - Enhanced */}
       <div className="p-5">
-        <h3 className="font-bold text-xl mb-3 line-clamp-1 text-gray-900">
-          {dish.name}
-        </h3>
+        {/* Price and Title Row */}
+        <div className="flex items-start justify-between mb-3">
+          <h3 className="font-bold text-xl line-clamp-1 text-gray-900 flex-1 mr-3">
+            {dish.name}
+          </h3>
+          <Badge className="bg-primary text-white font-bold text-sm px-3 py-1 shadow-lg border-0">
+            R$ {dish.price.toFixed(2)}
+          </Badge>
+        </div>
         
         <p className="text-muted-foreground text-sm mb-4 line-clamp-2 leading-relaxed">
           {dish.description}
@@ -106,7 +105,7 @@ const DishCard = ({ dish, onViewDetails }: DishCardProps) => {
 
         {/* Nutritional Info - Enhanced */}
         {(dish.calories || dish.protein || dish.carbs || dish.fat) && (
-          <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-slate-50 rounded-lg">
+          <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-slate-50/80 rounded-lg backdrop-blur-sm">
             {dish.calories && (
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">

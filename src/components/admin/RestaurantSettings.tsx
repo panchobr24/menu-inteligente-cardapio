@@ -20,6 +20,8 @@ interface Restaurant {
   secondary_color: string;
   font_family?: string;
   header_style?: string;
+  background_color?: string;
+  background_image_url?: string;
 }
 
 interface RestaurantSettingsProps {
@@ -33,11 +35,15 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
     description: restaurant.description || "",
     logo_url: restaurant.logo_url || "",
     font_family: restaurant.font_family || "Inter",
-    header_style: restaurant.header_style || "modern"
+    header_style: restaurant.header_style || "modern",
+    background_color: restaurant.background_color || "",
+    background_image_url: restaurant.background_image_url || ""
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
 
   const fontOptions = [
     { value: "Inter", label: "Inter (Moderno)", fallback: "sans-serif" },
@@ -119,6 +125,48 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
       toast.error("Erro ao fazer upload da logo");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleBackgroundImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor, selecione um arquivo de imagem");
+      return;
+    }
+
+    // Validate file size (max 10MB for background images)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 10MB");
+      return;
+    }
+
+    setUploadingBackground(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${restaurant.id}-background-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-logos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('restaurant-logos')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, background_image_url: publicUrl }));
+      toast.success("Imagem de fundo enviada com sucesso!");
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error("Erro ao fazer upload da imagem de fundo");
+    } finally {
+      setUploadingBackground(false);
     }
   };
 
@@ -307,6 +355,121 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
                     </h3>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Background Personalization */}
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="flex items-start gap-3">
+              <Palette className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium mb-1">Personalização de Fundo</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Personalize o fundo do seu cardápio com cores ou imagens
+                </p>
+                
+                <div className="space-y-4">
+                  {/* Background Color */}
+                  <div>
+                    <Label htmlFor="background_color" className="text-sm font-medium">
+                      Cor de Fundo
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        id="background_color"
+                        type="color"
+                        value={formData.background_color}
+                        onChange={(e) => setFormData({...formData, background_color: e.target.value})}
+                        className="w-16 h-10 p-1 border rounded"
+                      />
+                      <Input
+                        type="text"
+                        placeholder="#f8fafc ou nome da cor"
+                        value={formData.background_color}
+                        onChange={(e) => setFormData({...formData, background_color: e.target.value})}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({...formData, background_color: ""})}
+                      >
+                        Limpar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Deixe vazio para usar o fundo padrão
+                    </p>
+                  </div>
+
+                  {/* Background Image */}
+                  <div>
+                    <Label htmlFor="background_image" className="text-sm font-medium">
+                      Imagem de Fundo
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        type="text"
+                        placeholder="URL da imagem ou faça upload"
+                        value={formData.background_image_url}
+                        onChange={(e) => setFormData({...formData, background_image_url: e.target.value})}
+                        className="flex-1"
+                      />
+                      <input
+                        ref={backgroundFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBackgroundImageUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (backgroundFileInputRef.current) {
+                            backgroundFileInputRef.current.click();
+                          }
+                        }}
+                        disabled={uploadingBackground}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadingBackground ? "Enviando..." : "Upload"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({...formData, background_image_url: ""})}
+                      >
+                        Limpar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Recomendado: imagem de 1920x1080px ou similar
+                    </p>
+                    
+                    {/* Background Image Preview */}
+                    {formData.background_image_url && (
+                      <div className="mt-2">
+                        <Label className="text-xs text-muted-foreground">Preview:</Label>
+                        <div className="mt-1 relative w-full h-24 bg-muted rounded-lg overflow-hidden">
+                          <img
+                            src={formData.background_image_url}
+                            alt="Preview da imagem de fundo"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              const parent = e.target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground text-sm">Erro ao carregar imagem</div>';
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

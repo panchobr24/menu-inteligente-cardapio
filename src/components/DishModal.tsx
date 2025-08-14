@@ -59,16 +59,9 @@ const DishModal = ({ dish, isOpen, onClose }: DishModalProps) => {
               <div className="text-8xl opacity-30">🍽️</div>
             </div>
           )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="absolute top-3 right-3 bg-white/90 hover:bg-white"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-          <div className="absolute bottom-3 left-3">
-            <div className="text-3xl font-bold text-white bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm">
+          {/* Price Badge - Moved to top right for better visibility */}
+          <div className="absolute top-3 right-3">
+            <div className="text-2xl font-bold text-white bg-black/30 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-lg">
               R$ {dish.price.toFixed(2)}
             </div>
           </div>
