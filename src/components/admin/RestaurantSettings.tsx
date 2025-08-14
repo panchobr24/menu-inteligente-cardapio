@@ -1,15 +1,17 @@
 
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Save, Upload, Store, Image, Palette, Type } from "lucide-react";
-import QRCodeGenerator from "@/components/QRCodeGenerator";
+import { Upload, Save, Eye, Palette, Type, Layout, ImageIcon, X } from "lucide-react";
+import ColorCustomizer from "./ColorCustomizer";
+import QRCodeGenerator from "../QRCodeGenerator";
 
 interface Restaurant {
   id: string;
@@ -18,12 +20,12 @@ interface Restaurant {
   logo_url: string;
   primary_color: string;
   secondary_color: string;
-  font_family?: string;
-  header_style?: string;
-  background_color?: string;
-  background_image_url?: string;
-  card_background_color?: string;
-  card_size?: string;
+  font_family: string;
+  header_style: string;
+  background_color: string;
+  background_image_url: string;
+  card_background_color: string;
+  card_size: string;
 }
 
 interface RestaurantSettingsProps {
@@ -33,49 +35,115 @@ interface RestaurantSettingsProps {
 
 const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) => {
   const [formData, setFormData] = useState({
-    name: restaurant.name,
-    description: restaurant.description || "",
-    logo_url: restaurant.logo_url || "",
-    font_family: restaurant.font_family || "Inter",
-    header_style: restaurant.header_style || "logo-name",
-    background_color: restaurant.background_color || "",
-    background_image_url: restaurant.background_image_url || "",
-    card_background_color: restaurant.card_background_color || "#ffffff",
-    card_size: restaurant.card_size || "medium"
+    name: restaurant.name || '',
+    description: restaurant.description || '',
+    logo_url: restaurant.logo_url || '',
+    font_family: restaurant.font_family || '',
+    header_style: restaurant.header_style || 'logo-name',
+    background_color: restaurant.background_color || '',
+    background_image_url: restaurant.background_image_url || '',
+    card_background_color: restaurant.card_background_color || '',
+    card_size: restaurant.card_size || 'medium'
   });
-  const [loading, setLoading] = useState(false);
+
+  const [colors, setColors] = useState({
+    primary_color: restaurant.primary_color || '#3b82f6',
+    secondary_color: restaurant.secondary_color || '#8b5cf6'
+  });
+
   const [uploading, setUploading] = useState(false);
-  const [uploadingBackground, setUploadingBackground] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
 
-  const fontOptions = [
-    { value: "Inter", label: "Inter (Moderno)", fallback: "sans-serif" },
-    { value: "Playfair Display", label: "Playfair Display (Elegante)", fallback: "serif" },
-    { value: "Roboto", label: "Roboto (Limpo)", fallback: "sans-serif" },
-    { value: "Open Sans", label: "Open Sans (Clássico)", fallback: "sans-serif" },
-    { value: "Lora", label: "Lora (Serif)", fallback: "serif" },
-    { value: "Montserrat", label: "Montserrat (Geométrico)", fallback: "sans-serif" },
-    { value: "Poppins", label: "Poppins (Amigável)", fallback: "sans-serif" },
-    { value: "Source Sans Pro", label: "Source Sans Pro (Profissional)", fallback: "sans-serif" }
-  ];
+  useEffect(() => {
+    setFormData({
+      name: restaurant.name || '',
+      description: restaurant.description || '',
+      logo_url: restaurant.logo_url || '',
+      font_family: restaurant.font_family || '',
+      header_style: restaurant.header_style || 'logo-name',
+      background_color: restaurant.background_color || '',
+      background_image_url: restaurant.background_image_url || '',
+      card_background_color: restaurant.card_background_color || '',
+      card_size: restaurant.card_size || 'medium'
+    });
+    setColors({
+      primary_color: restaurant.primary_color || '#3b82f6',
+      secondary_color: restaurant.secondary_color || '#8b5cf6'
+    });
+  }, [restaurant]);
 
-  const headerStyleOptions = [
-    { value: "logo-only", label: "Apenas Logo (Logo centralizada)" },
-    { value: "name-only", label: "Apenas Nome (Nome em destaque)" },
-    { value: "logo-name", label: "Logo + Nome (Logo acima do nome)" },
-    { value: "name-logo", label: "Nome + Logo (Nome acima da logo)" },
-    { value: "side-by-side", label: "Lado a Lado (Logo e nome na horizontal)" },
-    { value: "banner", label: "Banner (Logo e nome em destaque)" }
-  ];
+  const uploadFile = async (file: File, type: 'logo' | 'background') => {
+    const bucket = type === 'logo' ? 'restaurant-logos' : 'restaurant-backgrounds';
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${restaurant.id}-${Date.now()}.${fileExt}`;
 
-  const handleSave = async () => {
-    setLoading(true);
-    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file);
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'background') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     try {
+      if (type === 'logo') {
+        setUploading(true);
+      } else {
+        setUploadingBg(true);
+      }
+
+      const url = await uploadFile(file, type);
+      
+      if (type === 'logo') {
+        setFormData(prev => ({ ...prev, logo_url: url }));
+      } else {
+        setFormData(prev => ({ ...prev, background_image_url: url }));
+      }
+      
+      toast.success(`${type === 'logo' ? 'Logo' : 'Imagem de fundo'} enviado com sucesso!`);
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      toast.error(`Erro ao enviar ${type === 'logo' ? 'logo' : 'imagem de fundo'}`);
+    } finally {
+      if (type === 'logo') {
+        setUploading(false);
+      } else {
+        setUploadingBg(false);
+      }
+    }
+  };
+
+  const removeImage = (type: 'logo' | 'background') => {
+    if (type === 'logo') {
+      setFormData(prev => ({ ...prev, logo_url: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, background_image_url: '' }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const updateData = {
+        ...formData,
+        ...colors
+      };
+
       const { data, error } = await supabase
         .from('restaurants')
-        .update(formData)
+        .update(updateData)
         .eq('id', restaurant.id)
         .select()
         .single();
@@ -88,736 +156,405 @@ const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) =
       console.error('Erro ao salvar:', error);
       toast.error("Erro ao salvar configurações");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error("Por favor, selecione um arquivo de imagem");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Máximo 5MB");
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${restaurant.id}-logo-${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('restaurant-logos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('restaurant-logos')
-        .getPublicUrl(fileName);
-
-      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
-      toast.success("Logo enviada com sucesso!");
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast.error("Erro ao fazer upload da logo");
-    } finally {
-      setUploading(false);
-    }
+  const handleColorChange = (type: 'primary' | 'secondary', color: string) => {
+    const colorKey = `${type}_color` as keyof typeof colors;
+    setColors(prev => ({ ...prev, [colorKey]: color }));
   };
 
-  const handleBackgroundImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const fontOptions = [
+    { value: 'Inter', label: 'Inter (Padrão)' },
+    { value: 'Roboto', label: 'Roboto' },
+    { value: 'Open Sans', label: 'Open Sans' },
+    { value: 'Montserrat', label: 'Montserrat' },
+    { value: 'Poppins', label: 'Poppins' },
+    { value: 'Playfair Display', label: 'Playfair Display' },
+    { value: 'Dancing Script', label: 'Dancing Script' },
+    { value: 'Merriweather', label: 'Merriweather' }
+  ];
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error("Por favor, selecione um arquivo de imagem");
-      return;
-    }
+  const headerStyleOptions = [
+    { value: 'logo-name', label: 'Logo + Nome' },
+    { value: 'logo-only', label: 'Apenas Logo' },
+    { value: 'name-only', label: 'Apenas Nome' },
+    { value: 'name-logo', label: 'Nome + Logo' },
+    { value: 'side-by-side', label: 'Lado a Lado' },
+    { value: 'banner', label: 'Banner' }
+  ];
 
-    // Validate file size (max 10MB for background images)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Máximo 10MB");
-      return;
-    }
+  const cardSizeOptions = [
+    { value: 'small', label: 'Pequeno' },
+    { value: 'medium', label: 'Médio' },
+    { value: 'large', label: 'Grande' }
+  ];
 
-    setUploadingBackground(true);
+  const handleColorPickerClick = (e: React.MouseEvent, type: 'primary' | 'secondary') => {
+    const target = e.target as HTMLElement;
+    const colorPicker = target.parentElement?.querySelector('input[type="color"]') as HTMLInputElement;
+    colorPicker?.click();
+  };
 
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${restaurant.id}-background-${Date.now()}.${fileExt}`;
+  const handleBackgroundColorPickerClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const colorPicker = target.parentElement?.querySelector('input[type="color"]') as HTMLInputElement;
+    colorPicker?.click();
+  };
 
-      const { error: uploadError } = await supabase.storage
-        .from('restaurant-logos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('restaurant-logos')
-        .getPublicUrl(fileName);
-
-      setFormData(prev => ({ ...prev, background_image_url: publicUrl }));
-      toast.success("Imagem de fundo enviada com sucesso!");
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast.error("Erro ao fazer upload da imagem de fundo");
-    } finally {
-      setUploadingBackground(false);
-    }
+  const handleCardBackgroundColorPickerClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const colorPicker = target.parentElement?.querySelector('input[type="color"]') as HTMLInputElement;
+    colorPicker?.click();
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Store className="w-5 h-5" />
-            Informações do Restaurante
-          </CardTitle>
-          <CardDescription>
-            Configure as informações básicas do seu restaurante
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do Restaurante</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Nome do seu restaurante"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descreva seu restaurante..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Logo do Restaurante</Label>
-            <div className="flex gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-              <Button 
-                variant="outline" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex-1"
-              >
-                <Image className="w-4 h-4 mr-2" />
-                {uploading ? "Enviando..." : "Selecionar Imagem"}
-              </Button>
-            </div>
-            {formData.logo_url && (
-              <div className="mt-2">
-                <img
-                  src={formData.logo_url}
-                  alt="Preview da logo"
-                  className="w-20 h-20 object-cover rounded-lg border"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+    <div className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layout className="w-5 h-5" />
+              Informações Básicas
+            </CardTitle>
+            <CardDescription>
+              Configure as informações básicas do seu restaurante
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome do Restaurante</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Digite o nome do restaurante"
+                  required
                 />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="w-5 h-5" />
-            Personalização Visual
-          </CardTitle>
-          <CardDescription>
-            Customize a aparência do seu cardápio público
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="font_family">Fonte Principal</Label>
-            <Select
-              value={formData.font_family}
-              onValueChange={(value) => setFormData({ ...formData, font_family: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma fonte" />
-              </SelectTrigger>
-              <SelectContent>
-                {fontOptions.map((font) => (
-                  <SelectItem key={font.value} value={font.value}>
-                    <div className="flex items-center gap-3 w-full p-1">
-                      <span 
-                        className="text-lg font-medium bg-muted px-2 py-1 rounded"
-                        style={{ 
-                          fontFamily: `${font.value}, ${font.fallback}`,
-                          minWidth: '2rem',
-                          textAlign: 'center'
-                        }}
-                      >
-                        Aa
-                      </span>
-                      <span className="flex-1">{font.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Preview da fonte selecionada */}
-            <div className="mt-2 p-3 bg-muted/50 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-1">Preview da fonte selecionada:</p>
-              <div 
-                className="text-lg font-medium"
-                style={{ 
-                  fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                }}
-              >
-                {formData.name || "Nome do Restaurante"}
+              
+              <div className="space-y-2">
+                <Label htmlFor="font_family">Fonte</Label>
+                <Select value={formData.font_family} onValueChange={(value) => setFormData(prev => ({ ...prev, font_family: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma fonte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fontOptions.map((font) => (
+                      <SelectItem key={font.value} value={font.value}>
+                        <span style={{ fontFamily: font.value }}>{font.label}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="header_style">Estilo do Cabeçalho</Label>
-            <Select
-              value={formData.header_style}
-              onValueChange={(value) => setFormData({ ...formData, header_style: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um estilo" />
-              </SelectTrigger>
-              <SelectContent>
-                {headerStyleOptions.map((style) => (
-                  <SelectItem key={style.value} value={style.value}>
-                    <div className="flex items-center gap-3 w-full p-1">
-                      <div className="w-8 h-6 bg-primary/20 rounded border flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-primary">
-                          {style.value === 'modern' && 'M'}
-                          {style.value === 'classic' && 'C'}
-                          {style.value === 'banner' && 'B'}
-                          {style.value === 'minimal' && 'Mi'}
-                        </span>
-                      </div>
-                      <span className="flex-1">{style.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Preview do estilo de cabeçalho */}
-            <div className="mt-2 p-3 bg-muted/50 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-2">Preview do estilo selecionado:</p>
-              <div className="border rounded-lg p-3 bg-background">
-                {formData.header_style === 'logo-only' && (
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-xl">
-                      {formData.logo_url ? '🖼️' : 'R'}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Logo centralizada</p>
-                  </div>
-                )}
-                {formData.header_style === 'name-only' && (
-                  <div className="text-center">
-                    <div 
-                      className="text-2xl font-bold text-foreground"
-                      style={{ 
-                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                      }}
-                    >
-                      {formData.name || "Nome do Restaurante"}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Apenas o nome</p>
-                  </div>
-                )}
-                {formData.header_style === 'logo-name' && (
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-xl">
-                      {formData.logo_url ? '🖼️' : 'R'}
-                    </div>
-                    <div 
-                      className="text-xl font-bold text-foreground"
-                      style={{ 
-                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                      }}
-                    >
-                      {formData.name || "Nome do Restaurante"}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Logo acima do nome</p>
-                  </div>
-                )}
-                {formData.header_style === 'name-logo' && (
-                  <div className="text-center">
-                    <div 
-                      className="text-xl font-bold text-foreground mb-2"
-                      style={{ 
-                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                      }}
-                    >
-                      {formData.name || "Nome do Restaurante"}
-                    </div>
-                    <div className="w-16 h-16 bg-primary rounded-full mx-auto flex items-center justify-center text-white font-bold text-xl">
-                      {formData.logo_url ? '🖼️' : 'R'}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">Nome acima da logo</p>
-                  </div>
-                )}
-                {formData.header_style === 'side-by-side' && (
-                  <div className="flex items-center gap-3 justify-center">
-                    <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                      {formData.logo_url ? '🖼️' : 'R'}
-                    </div>
-                    <div 
-                      className="text-xl font-bold text-foreground"
-                      style={{ 
-                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                      }}
-                    >
-                      {formData.name || "Nome do Restaurante"}
-                    </div>
-                    <p className="text-xs text-muted-foreground absolute -bottom-6 left-1/2 transform -translate-x-1/2">Lado a lado</p>
-                  </div>
-                )}
-                {formData.header_style === 'banner' && (
-                  <div className="bg-primary text-white p-3 rounded-lg text-center">
-                    <div className="w-12 h-12 bg-white/20 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold">
-                      {formData.logo_url ? '🖼️' : 'R'}
-                    </div>
-                    <div 
-                      className="text-lg font-bold"
-                      style={{ 
-                        fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                      }}
-                    >
-                      {formData.name || "Nome do Restaurante"}
-                    </div>
-                    <p className="text-xs text-white/80 mt-1">Banner destacado</p>
-                  </div>
-                )}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Descreva seu restaurante"
+                rows={3}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Logo Upload */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5" />
+              Logo do Restaurante
+            </CardTitle>
+            <CardDescription>
+              Faça upload do logo do seu restaurante (PNG, JPG, máx. 5MB)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="relative overflow-hidden"
+                  disabled={uploading}
+                  onClick={() => document.getElementById('logo-upload')?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Enviando...' : 'Escolher Logo'}
+                </Button>
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, 'logo')}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={uploading}
+                />
+              </div>
+              
+              {formData.logo_url && (
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={formData.logo_url} 
+                    alt="Logo atual" 
+                    className="w-12 h-12 object-contain border rounded"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeImage('logo')}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="header_style">Estilo do Cabeçalho</Label>
+              <Select value={formData.header_style} onValueChange={(value) => setFormData(prev => ({ ...prev, header_style: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o estilo do cabeçalho" />
+                </SelectTrigger>
+                <SelectContent>
+                  {headerStyleOptions.map((style) => (
+                    <SelectItem key={style.value} value={style.value}>
+                      {style.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Colors */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Personalização de Cores
+            </CardTitle>
+            <CardDescription>
+              Defina as cores principais do seu menu
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Cor Primária</Label>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-12 h-12 rounded-lg border-2 border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                    style={{ backgroundColor: colors.primary_color }}
+                    onClick={(e) => handleColorPickerClick(e, 'primary')}
+                  />
+                  <input
+                    type="color"
+                    value={colors.primary_color}
+                    onChange={(e) => handleColorChange('primary', e.target.value)}
+                    className="sr-only"
+                  />
+                  <Input
+                    value={colors.primary_color}
+                    onChange={(e) => handleColorChange('primary', e.target.value)}
+                    placeholder="#3b82f6"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Cor Secundária</Label>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-12 h-12 rounded-lg border-2 border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                    style={{ backgroundColor: colors.secondary_color }}
+                    onClick={(e) => handleColorPickerClick(e, 'secondary')}
+                  />
+                  <input
+                    type="color"
+                    value={colors.secondary_color}
+                    onChange={(e) => handleColorChange('secondary', e.target.value)}
+                    className="sr-only"
+                  />
+                  <Input
+                    value={colors.secondary_color}
+                    onChange={(e) => handleColorChange('secondary', e.target.value)}
+                    placeholder="#8b5cf6"
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Background Personalization */}
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-3">
-              <Palette className="w-5 h-5 text-muted-foreground mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium mb-1">Personalização de Fundo</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Personalize o fundo do seu cardápio com cores ou imagens
-                </p>
+        {/* Background Customization */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5" />
+              Personalização de Fundo
+            </CardTitle>
+            <CardDescription>
+              Configure o fundo do seu menu
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label>Cor de Fundo</Label>
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-12 h-12 rounded-lg border-2 border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                  style={{ backgroundColor: formData.background_color || '#ffffff' }}
+                  onClick={handleBackgroundColorPickerClick}
+                />
+                <input
+                  type="color"
+                  value={formData.background_color || '#ffffff'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, background_color: e.target.value }))}
+                  className="sr-only"
+                />
+                <Input
+                  value={formData.background_color}
+                  onChange={(e) => setFormData(prev => ({ ...prev, background_color: e.target.value }))}
+                  placeholder="#ffffff"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Imagem de Fundo</Label>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="relative overflow-hidden"
+                    disabled={uploadingBg}
+                    onClick={() => document.getElementById('bg-upload')?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploadingBg ? 'Enviando...' : 'Escolher Imagem'}
+                  </Button>
+                  <input
+                    id="bg-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'background')}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={uploadingBg}
+                  />
+                </div>
                 
-                <div className="space-y-4">
-                  {/* Background Color */}
-                  <div>
-                    <Label htmlFor="background_color" className="text-sm font-medium">
-                      Cor de Fundo
-                    </Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        id="background_color"
-                        type="color"
-                        value={formData.background_color}
-                        onChange={(e) => setFormData({...formData, background_color: e.target.value})}
-                        className="w-16 h-10 p-1 border rounded"
-                      />
-                      <Input
-                        type="text"
-                        placeholder="#f8fafc ou nome da cor"
-                        value={formData.background_color}
-                        onChange={(e) => setFormData({...formData, background_color: e.target.value})}
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setFormData({...formData, background_color: ""})}
-                      >
-                        Limpar
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <strong>Importante:</strong> Esta cor/imagem ocupará TODO o fundo do menu
-                    </p>
-                  </div>
-
-                  {/* Background Image */}
-                  <div>
-                    <Label htmlFor="background_image" className="text-sm font-medium">
-                      Imagem de Fundo
-                    </Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        type="text"
-                        placeholder="URL da imagem ou faça upload"
-                        value={formData.background_image_url}
-                        onChange={(e) => setFormData({...formData, background_image_url: e.target.value})}
-                        className="flex-1"
-                      />
-                      <input
-                        ref={backgroundFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBackgroundImageUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (backgroundFileInputRef.current) {
-                            backgroundFileInputRef.current.click();
-                          }
-                        }}
-                        disabled={uploadingBackground}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        {uploadingBackground ? "Enviando..." : "Upload"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setFormData({...formData, background_image_url: ""})}
-                      >
-                        Limpar
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Recomendado: imagem de 1920x1080px ou similar. <strong>Ocupará todo o fundo.</strong>
-                    </p>
-                    
-                    {/* Background Image Preview */}
-                    {formData.background_image_url && (
-                      <div className="mt-2">
-                        <Label className="text-xs text-muted-foreground">Preview:</Label>
-                        <div className="mt-1 relative w-full h-24 bg-muted rounded-lg overflow-hidden">
-                          <img
-                            src={formData.background_image_url}
-                            alt="Preview da imagem de fundo"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                              const parent = e.target.parentElement;
-                              if (parent) {
-                                parent.innerHTML = '<div class="flex items-center justify-center h-full text-muted-foreground text-sm">Erro ao carregar imagem</div>';
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card Personalization */}
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 text-muted-foreground mt-0.5">🎴</div>
-              <div className="flex-1">
-                <h4 className="font-medium mb-1">Personalização dos Cards</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Personalize a aparência dos cards de comida
-                </p>
-                
-                <div className="space-y-4">
-                  {/* Card Background Color */}
-                  <div>
-                    <Label htmlFor="card_background_color" className="text-sm font-medium">
-                      Cor de Fundo dos Cards
-                    </Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        id="card_background_color"
-                        type="color"
-                        value={formData.card_background_color || "#ffffff"}
-                        onChange={(e) => setFormData({...formData, card_background_color: e.target.value})}
-                        className="w-16 h-10 p-1 border rounded"
-                      />
-                      <Input
-                        type="text"
-                        placeholder="#ffffff ou nome da cor"
-                        value={formData.card_background_color || "#ffffff"}
-                        onChange={(e) => setFormData({...formData, card_background_color: e.target.value})}
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setFormData({...formData, card_background_color: "#ffffff"})}
-                      >
-                        Padrão
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Cor de fundo dos cards de comida
-                    </p>
-                  </div>
-
-                  {/* Card Size */}
-                  <div>
-                    <Label htmlFor="card_size" className="text-sm font-medium">
-                      Tamanho dos Cards
-                    </Label>
-                    <Select
-                      value={formData.card_size || "medium"}
-                      onValueChange={(value) => setFormData({ ...formData, card_size: value })}
+                {formData.background_image_url && (
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={formData.background_image_url} 
+                      alt="Fundo atual" 
+                      className="w-16 h-12 object-cover border rounded"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeImage('background')}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tamanho" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="small">Pequeno (3 por linha)</SelectItem>
-                        <SelectItem value="medium">Médio (2 por linha)</SelectItem>
-                        <SelectItem value="large">Grande (1 por linha)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tamanho dos cards de comida no menu
-                    </p>
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Color Customization */}
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-3">
-              <Palette className="w-5 h-5 text-muted-foreground mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium mb-1">Personalização de Cores</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Customize as cores do seu menu para refletir a identidade visual do seu restaurante
-                </p>
-                
-                <div className="space-y-4">
-                  {/* Color Inputs */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="primary_color">Cor Primária</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="primary_color"
-                          type="color"
-                          value={formData.primary_color || "#3b82f6"}
-                          onChange={(e) => setFormData({...formData, primary_color: e.target.value})}
-                          className="w-16 h-12 p-1 border-2"
-                        />
-                        <Input
-                          value={formData.primary_color || "#3b82f6"}
-                          onChange={(e) => setFormData({...formData, primary_color: e.target.value})}
-                          placeholder="#3b82f6"
-                          className="flex-1"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="secondary_color">Cor Secundária</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="secondary_color"
-                          type="color"
-                          value={formData.secondary_color || "#8b5cf6"}
-                          onChange={(e) => setFormData({...formData, secondary_color: e.target.value})}
-                          className="w-16 h-12 p-1 border-2"
-                        />
-                        <Input
-                          value={formData.secondary_color || "#8b5cf6"}
-                          onChange={(e) => setFormData({...formData, secondary_color: e.target.value})}
-                          placeholder="#8b5cf6"
-                          className="flex-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Preset Themes */}
-                  <div className="space-y-4">
-                    <Label>Temas Predefinidos</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {[
-                        { name: "Verde Natureza", primary: "#16a34a", secondary: "#f97316" },
-                        { name: "Azul Oceano", primary: "#0ea5e9", secondary: "#8b5cf6" },
-                        { name: "Vermelho Elegante", primary: "#dc2626", secondary: "#fbbf24" },
-                        { name: "Roxo Moderno", primary: "#7c3aed", secondary: "#06b6d4" },
-                        { name: "Rosa Delicado", primary: "#ec4899", secondary: "#10b981" },
-                        { name: "Laranja Vibrante", primary: "#ea580c", secondary: "#3b82f6" }
-                      ].map((theme) => (
-                        <button
-                          key={theme.name}
-                          type="button"
-                          onClick={() => setFormData({
-                            ...formData, 
-                            primary_color: theme.primary, 
-                            secondary_color: theme.secondary
-                          })}
-                          className="p-3 rounded-lg border-2 hover:border-primary/50 transition-all text-left"
-                        >
-                          <div className="flex gap-2 mb-2">
-                            <div 
-                              className="w-6 h-6 rounded"
-                              style={{ backgroundColor: theme.primary }}
-                            />
-                            <div 
-                              className="w-6 h-6 rounded"
-                              style={{ backgroundColor: theme.secondary }}
-                            />
-                          </div>
-                          <p className="text-sm font-medium">{theme.name}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+        {/* Card Customization */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layout className="w-5 h-5" />
+              Personalização dos Cards
+            </CardTitle>
+            <CardDescription>
+              Configure a aparência dos cards dos pratos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Cor de Fundo dos Cards</Label>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-12 h-12 rounded-lg border-2 border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                    style={{ backgroundColor: formData.card_background_color || '#ffffff' }}
+                    onClick={handleCardBackgroundColorPickerClick}
+                  />
+                  <input
+                    type="color"
+                    value={formData.card_background_color || '#ffffff'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, card_background_color: e.target.value }))}
+                    className="sr-only"
+                  />
+                  <Input
+                    value={formData.card_background_color}
+                    onChange={(e) => setFormData(prev => ({ ...prev, card_background_color: e.target.value }))}
+                    placeholder="#ffffff"
+                    className="flex-1"
+                  />
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-3">
-              <Type className="w-5 h-5 text-muted-foreground mt-0.5" />
-              <div>
-                <h4 className="font-medium mb-1">Preview Completo</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Veja como ficará o cabeçalho do seu cardápio
-                </p>
-                <div className="border rounded-lg p-4 bg-background">
-                  {formData.header_style === 'logo-only' && (
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
-                        {formData.logo_url ? '🖼️' : 'R'}
-                      </div>
-                    </div>
-                  )}
-                  {formData.header_style === 'name-only' && (
-                    <div className="text-center">
-                      <div 
-                        className="text-2xl font-bold text-foreground"
-                        style={{ 
-                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                        }}
-                      >
-                        {formData.name || "Nome do Restaurante"}
-                      </div>
-                    </div>
-                  )}
-                  {formData.header_style === 'logo-name' && (
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
-                        {formData.logo_url ? '🖼️' : 'R'}
-                      </div>
-                      <div 
-                        className="text-2xl font-bold text-foreground"
-                        style={{ 
-                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                        }}
-                      >
-                        {formData.name || "Nome do Restaurante"}
-                      </div>
-                    </div>
-                  )}
-                  {formData.header_style === 'name-logo' && (
-                    <div className="text-center">
-                      <div 
-                        className="text-2xl font-bold text-foreground mb-3"
-                        style={{ 
-                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                        }}
-                      >
-                        {formData.name || "Nome do Restaurante"}
-                      </div>
-                      <div className="w-16 h-16 bg-primary rounded-full mx-auto flex items-center justify-center text-white font-bold text-xl">
-                        {formData.logo_url ? '🖼️' : 'R'}
-                      </div>
-                    </div>
-                  )}
-                  {formData.header_style === 'side-by-side' && (
-                    <div className="flex items-center gap-4 justify-center">
-                      <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                        {formData.logo_url ? '🖼️' : 'R'}
-                      </div>
-                      <div 
-                        className="text-2xl font-bold text-foreground"
-                        style={{ 
-                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                        }}
-                      >
-                        {formData.name || "Nome do Restaurante"}
-                      </div>
-                    </div>
-                  )}
-                  {formData.header_style === 'banner' && (
-                    <div className="bg-primary text-white p-4 rounded-lg text-center">
-                      <div className="w-16 h-16 bg-white/20 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-xl">
-                        {formData.logo_url ? '🖼️' : 'R'}
-                      </div>
-                      <div 
-                        className="text-2xl font-bold"
-                        style={{ 
-                          fontFamily: `${formData.font_family}, ${fontOptions.find(f => f.value === formData.font_family)?.fallback || 'sans-serif'}`
-                        }}
-                      >
-                        {formData.name || "Nome do Restaurante"}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="card_size">Tamanho dos Cards</Label>
+                <Select value={formData.card_size} onValueChange={(value) => setFormData(prev => ({ ...prev, card_size: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tamanho dos cards" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cardSizeOptions.map((size) => (
+                      <SelectItem key={size.value} value={size.value}>
+                        {size.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="flex gap-4">
-        <Button onClick={handleSave} disabled={loading} className="flex-1">
-          <Save className="w-4 h-4 mr-2" />
-          {loading ? "Salvando..." : "Salvar Configurações"}
-        </Button>
-      </div>
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+          <Button type="submit" disabled={saving} className="flex-1">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Salvando...' : 'Salvar Configurações'}
+          </Button>
+          
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => window.open(`/menu/${restaurant.id}`, '_blank')}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Preview
+          </Button>
+        </div>
+      </form>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>QR Code do Cardápio</CardTitle>
-          <CardDescription>
-            Gere um QR Code para que os clientes acessem seu cardápio facilmente
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <QRCodeGenerator 
-            restaurantId={restaurant.id}
-            restaurantName={restaurant.name}
-          />
-        </CardContent>
-      </Card>
+      {/* QR Code */}
+      <QRCodeGenerator restaurantId={restaurant.id} />
     </div>
   );
 };

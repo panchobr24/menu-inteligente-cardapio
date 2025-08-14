@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -356,30 +357,17 @@ const PublicMenu = () => {
     );
   }
 
-  // Apply background to body when component mounts
-  useEffect(() => {
-    if (restaurant?.background_color || restaurant?.background_image_url) {
-      document.body.style.backgroundColor = restaurant.background_color || '';
-      document.body.style.backgroundImage = restaurant.background_image_url ? `url(${restaurant.background_image_url})` : '';
-      document.body.style.backgroundSize = restaurant.background_image_url ? 'cover' : '';
-      document.body.style.backgroundPosition = restaurant.background_image_url ? 'center' : '';
-      document.body.style.backgroundAttachment = restaurant.background_image_url ? 'fixed' : '';
-      document.body.style.backgroundRepeat = restaurant.background_image_url ? 'no-repeat' : '';
-    }
-
-    // Cleanup when component unmounts
-    return () => {
-      document.body.style.backgroundColor = '';
-      document.body.style.backgroundImage = '';
-      document.body.style.backgroundSize = '';
-      document.body.style.backgroundPosition = '';
-      document.body.style.backgroundAttachment = '';
-      document.body.style.backgroundRepeat = '';
-    };
-  }, [restaurant?.background_color, restaurant?.background_image_url]);
+  const containerStyle = {
+    backgroundColor: restaurant.background_color || undefined,
+    backgroundImage: restaurant.background_image_url ? `url(${restaurant.background_image_url})` : undefined,
+    backgroundSize: restaurant.background_image_url ? 'cover' : undefined,
+    backgroundPosition: restaurant.background_image_url ? 'center' : undefined,
+    backgroundAttachment: restaurant.background_image_url ? 'fixed' : undefined,
+    backgroundRepeat: restaurant.background_image_url ? 'no-repeat' : undefined,
+  };
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full" style={containerStyle}>
       {/* Background overlay for better readability when using background image */}
       {restaurant.background_image_url && (
         <div className="fixed inset-0 bg-black/20 pointer-events-none z-0" />
